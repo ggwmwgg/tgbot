@@ -1,2 +1,9 @@
-aiogram<3.0
-environs~=8.0.0
+aiogram
+aiohttp
+aioredis
+python-dotenv
+twilio
+requests
+SQLAlchemy
+asyncpg
+gino
