@@ -4,10 +4,20 @@ from asyncpg import UniqueViolationError
 
 from utils.db_api.db_gino import db
 from utils.db_api.schemas.user import User
+from utils.db_api.schemas.order import Order
+from utils.db_api.schemas.item import Item
+from utils.db_api.schemas.cart import Cart
+from utils.db_api.schemas.branches import Branch
 
 
+# Добавить заказ
+async def add_order(user_id: int, p_type: str, items: dict, comment: str, total_price: int, delivery_price: int, cashback: int, type_delivery: int, is_paid: int, lon: float, lat: float, branch: str):
+    try:
+        order = Order(user_id=user_id, p_type=p_type,items=items, comment=comment, total_price=total_price,delivery_price=delivery_price, cashback=cashback, type_delivery=type_delivery, is_paid=is_paid, lon=lon, lat=lat, branch=branch)
+        await order.create()
 
-
+    except UniqueViolationError:
+        pass
 
 # Добавить пользователя
 async def add_user(id: int, name: str, lang_user: str, number: str, username: str, referral: int):
@@ -18,7 +28,57 @@ async def add_user(id: int, name: str, lang_user: str, number: str, username: st
     except UniqueViolationError:
         pass
 
+# Добавить товар
+async def add_item(name_ru: str, name_uz: str, name_en: str, d_ru: str, d_uz: str, d_en: str, price: int,
+                   cat_ru: str, cat_uz: str, cat_en: str, photo: str,):
+    try:
+        item = Item(name_ru=name_ru, name_uz=name_uz, name_en=name_en, d_ru=d_ru, d_uz=d_uz, d_en=d_en, price=price,
+                    cat_ru=cat_ru, cat_uz=cat_uz, cat_en=cat_en, photo=photo)
+        await item.create()
 
+    except UniqueViolationError:
+        pass
+
+
+# Добавить филиал
+async def add_branch(name: str, location: dict, contacts: str):
+    try:
+        branch = Branch(name=name, location=location, contacts=contacts)
+        await branch.create()
+
+    except UniqueViolationError:
+        pass
+
+
+# Выбрать товар по его id в корзине пользователя
+async def select_cart_by_itemid(user_id: int,id: int):
+    cart = await Cart.query.where(Cart.user_id == user_id).where(Cart.item_id == id).gino.first()
+    return cart
+
+
+# Узнать цену товара
+async def select_item_price(id: int):
+    item = await Item.query.where(Item.id == id).gino.first()
+    price = item.price
+    return price
+
+
+# Добавить или обновить товар в корзине пользователя
+async def add_or_update_cart(user_id: int, item_id: int, quantity: int, price: int):
+    if await select_cart_by_itemid(user_id, item_id):
+        cart = await Cart.query.where(Cart.user_id == user_id).where(Cart.item_id == item_id).gino.first()
+        quantity = cart.quantity + quantity
+        price = cart.price + price
+        await cart.update(quantity=quantity, price=price).apply()
+    else:
+        cart = Cart(user_id=user_id, item_id=item_id, quantity=quantity, price=price)
+        await cart.create()
+
+
+# Выбрать все товары из корзины пользователя
+async def select_cart(user_id: int):
+    cart = await Cart.query.where(Cart.user_id == user_id).gino.all()
+    return cart
 # Выбрать всех пользователей
 async def select_all_users():
     users = await User.query.gino.all()
@@ -34,6 +94,10 @@ async def delete_user(id: int):
     user = await User.get(id)
     await user.delete()
 
+# Удалить товар из корзины пользователя по его id и id товара
+async def delete_cart_by_itemid(user_id: int, id: int):
+    cart = await Cart.query.where(Cart.user_id == user_id).where(Cart.item_id == id).gino.first()
+    await cart.delete()
 
 # Выбрать пользователя по номеру
 async def select_user_by_number(number: str):
@@ -41,10 +105,43 @@ async def select_user_by_number(number: str):
     return user
 
 
+# Выбрать название товара по id
+async def select_item_name(id: int, lang: str):
+    if lang == 'ru':
+        item = await Item.query.where(Item.id == id).gino.first()
+        name = item.name_ru
+        return name
+    elif lang == 'uz':
+        item = await Item.query.where(Item.id == id).gino.first()
+        name = item.name_uz
+        return name
+    elif lang == 'en':
+        item = await Item.query.where(Item.id == id).gino.first()
+        name = item.name_en
+        return name
+
 # Установить права админа (1 = админ, 2 = оператор, 3 = доставка)
 async def set_rights(id: int, is_admin: int):
     user = await User.get(id)
     await user.update(is_admin=is_admin).apply()
+
+
+# Получить список товаров из корзины пользователя
+async def get_cart_list(user_id: int, lang: str):
+    cart = await select_cart(user_id)
+    list = []
+    for i in cart:
+        item = await select_item_name(i.item_id, lang)
+        list.append(item + " ❌")
+    return list
+
+async def get_cart_list_nox(user_id: int, lang: str):
+    cart = await select_cart(user_id)
+    list = []
+    for i in cart:
+        item = await select_item_name(i.item_id, lang)
+        list.append(item)
+    return list
 
 # Проверить права пользователя
 async def check_rights(id: int):
@@ -138,6 +235,185 @@ async def update_user_name(id, name):
     user = await User.get(id)
     await user.update(name=name).apply()
 
+# Выбрать id последнего заказа по id пользователя
+async def select_order(id: int):
+    order = await Order.query.where(Order.user_id == id).order_by(Order.id.desc()).gino.first()
+    # order = await Order.query.where(Order.id == id).gino.first()
+    return order.id
+
+# Проверить есть ли больше одного доставленного или двух активных неоплаченных заказов у пользователя
+async def check_debt_active(id: int):
+    count_active = 0
+    for i in await Order.query.where(Order.user_id == id).gino.all():
+        if i.is_paid == 0:
+            if i.status == 1 or i.status == 2 or i.status == 3 or i.status == 4:
+                count_active += 1
+            if i.status == 5:
+                return True
+        if i.is_paid == 1:
+            pass
+        if count_active >= 2:
+            return True
+    return False
+
+
+
+    # order = await Order.query.where(Order.id == id).gino.first()
+
+
+# Проверить количество активных неоплаченных заказов
+async def count_active_orders(id: int):
+    count_active = 0
+    for i in await Order.query.where(Order.user_id == id).gino.all():
+        if i.is_paid == 0:
+            if i.status == 1 or i.status == 2 or i.status == 3 or i.status == 4:
+                count_active += 1
+
+
+    return count_active
+
+# Изменить статус заказа (1 = активный, 2 = подтвержден, 3 = приготовление, 4 = приготовлен, 5 = доставка, 6 = доставлен, 7 = отменен)
+async def change_status(id: int, status: int):
+    order = await Order.get(id)
+    await order.update(status=status).apply()
+
+# Проверить оплачен ли заказ (1 = да, 0 = нет)
+async def payment_status(id: int):
+    order = await Order.get(id)
+    return order.is_paid
+
+# Изменить статус оплаты заказа (1 = да, 0 = нет)
+async def change_payment_status(id: int, is_paid: int):
+    order = await Order.get(id)
+    await order.update(is_paid=is_paid).apply()
+
+# Проверить статус заказа (1 = активный, 2 = подтвержден, 3 = приготовление, 4 = приготовлен, 5 = доставка, 6 = доставлен, 7 = отменен)
+async def check_status(id: int):
+    order = await Order.get(id)
+    return order.status
+
+# Получаем категории и кнопки
+async def get_categories(lang: str) -> List[Item]:
+#async def get_categories(lang: str):
+    list = []
+    if lang == "ru":
+        list_lul = ["Оформить заказ", "Корзина", "Назад"]
+        list.append(list_lul[0])
+        list.append(list_lul[1])
+        ru = await Item.query.distinct(Item.cat_ru).gino.all()
+        for i in ru:
+            list.append(i.cat_ru)
+        list.append(list_lul[2])
+
+        return list
+    elif lang == "uz":
+        list_lul = ["Buyurtma berish", "Savat", "Ortga"]
+        list.append(list_lul[0])
+        list.append(list_lul[1])
+        uz = await Item.query.distinct(Item.cat_uz).gino.all()
+        for i in uz:
+            list.append(i.cat_uz)
+        list.append(list_lul[2])
+        return list
+    elif lang == "en":
+        list_lul = ["Make an order", "Cart", "Back"]
+        en = await Item.query.distinct(Item.cat_en).gino.all()
+        list.append(list_lul[0])
+        list.append(list_lul[1])
+        for i in en:
+            list.append(i.cat_en)
+        list.append(list_lul[2])
+        return list
+
+# Получаем товары и кнопки
+async def get_subcategories(category: str, lang: str):
+    list = []
+    if lang == "ru":
+        list_lul = ["Оформить заказ", "Корзина", "Назад"]
+        list.append(list_lul[0])
+        list.append(list_lul[1])
+        ru = await Item.query.where(Item.cat_ru == category).order_by(Item.id.desc()).gino.all()
+        for i in ru:
+            list.append(i.name_ru)
+        list.append(list_lul[2])
+        return list
+    elif lang == "uz":
+        list_lul = ["Buyurtma berish", "Savat", "Ortga"]
+        list.append(list_lul[0])
+        list.append(list_lul[1])
+        uz = await Item.query.where(Item.cat_uz == category).order_by(Item.id.desc()).gino.all()
+        for i in uz:
+            list.append(i.name_uz)
+        list.append(list_lul[2])
+        return list
+    elif lang == "en":
+        list_lul = ["Make an order", "Cart", "Back"]
+        en = await Item.query.where(Item.cat_en == category).order_by(Item.id.desc()).gino.all()
+        list.append(list_lul[0])
+        list.append(list_lul[1])
+        for i in en:
+            list.append(i.name_en)
+        list.append(list_lul[2])
+        return list
+
+
+# Получаем только список категорий
+async def get_only_categories(lang) -> List[Item]:
+#async def get_categories(lang: str):
+    list = []
+    if lang == "ru":
+        ru = await Item.query.distinct(Item.cat_ru).gino.all()
+        for i in ru:
+            list.append(i.cat_ru)
+        return list
+    elif lang == "uz":
+        uz = await Item.query.distinct(Item.cat_uz).gino.all()
+        for i in uz:
+            list.append(i.cat_uz)
+        return list
+    elif lang == "en":
+        en = await Item.query.distinct(Item.cat_en).gino.all()
+        for i in en:
+            list.append(i.cat_en)
+        return list
+
+# Получаем только список товаров
+async def get_only_subcategories(category, lang) -> List[Item]:
+    list = []
+    if lang == "ru":
+        ru = await Item.query.where(Item.cat_ru == category).order_by(Item.id.desc()).gino.all()
+        for i in ru:
+            list.append(i.name_ru)
+        return list
+    elif lang == "uz":
+        uz = await Item.query.where(Item.cat_uz == category).order_by(Item.id.desc()).gino.all()
+        for i in uz:
+            list.append(i.name_uz)
+        return list
+    elif lang == "en":
+        en = await Item.query.where(Item.cat_en == category).order_by(Item.id.desc()).gino.all()
+        for i in en:
+            list.append(i.name_en)
+        return list
+
+
+# Получить товар по названию
+async def get_item_by_name(name: str, lang: str) -> Item:
+    if lang == "ru":
+        return await Item.query.where(Item.name_ru == name).gino.first()
+    elif lang == "uz":
+        return await Item.query.where(Item.name_uz == name).gino.first()
+    elif lang == "en":
+        return await Item.query.where(Item.name_en == name).gino.first()
+
+# Получить товар по id
+async def get_item_by_id(id: int) -> Item:
+    return await Item.query.where(Item.id == id).gino.first()
+
+# Очистить корзину по id пользователя
+async def clear_cart_by_user_id(user_id: int):
+    await Cart.delete.where(Cart.user_id == user_id).gino.status()
+
 # Обновить тип последнего заказа пользователя 0 = no, 1 = delivery, 2 = pickup
 async def update_last_order_type(user_id: int, last: int):
     await User.update.values(last=last).where(User.id == user_id).gino.status()
@@ -185,6 +461,10 @@ async def unblock_user(user: User):
     user.allowed = True
 
 
+# Выбрать последний заказ пользователя по id пользователя
+async def select_last_order_by_id(user_id: int) -> Order:
+    return await Order.query.where(Order.user_id == user_id).order_by(Order.id.desc()).gino.first()
+
 # Выбрать операторов и администраторов
 async def select_operators() -> List[User]:
     list = []
@@ -196,5 +476,48 @@ async def select_operators() -> List[User]:
         list.append(i.id)
     return list
 
+# Выбрать все заказы
+async def select_all_orders():
+    return await Order.query.gino.all()
+
+# Выбрать все активные заказы
+async def select_all_active_orders():
+    return await Order.query.where(Order.status == 1).gino.all()
+
+# Выбрать все филиалы
+async def select_all_branches():
+    return await Branch.query.gino.all()
+
+# Выбрать все филиалы списком
+async def select_all_branches_list() -> List[Branch]:
+    list = []
+    for i in await select_all_branches():
+        list.append(i.name)
+    return list
+
+# Вернуть список активных заказов по названию филиала
+async def select_active_orders_by_branch(branch: str) -> List[Order]:
+    return await Order.query.where(Order.branch == branch).where(Order.status == 1).gino.all()
+
+# Выбрать заказ по id
+async def select_order_by_id(id: int) -> Order:
+    return await Order.query.where(Order.id == id).gino.first()
+
+
+# Изменить русское название блюда
+# Изменить узбекское название блюда
+# Изменить английское название блюда
+# Изменить русское описание блюда
+# Изменить узбекское описание блюда
+# Изменить английское описание блюда
+# Изменить цену блюда
+# Изменить статус доступности блюда
+# Изменить фото блюда
+# Изменить категорию блюда
+# Изменить подкатегорию блюда
+# Выбрать товар по айди
+# Выбрать айди по русскому названию товара
+# Выбрать айди по узбекскому названию товара
+# Выбрать айди по английскому названию товара
 
 

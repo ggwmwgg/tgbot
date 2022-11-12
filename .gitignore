@@ -129,7 +129,7 @@ dmypy.json
 .pyre/
 .idea/$CACHE_FILE$
 .idea/.gitignore
-.idea/botpy.iml
+.idea/aiogram-bot-template.iml
 .idea/codeStyles/
 .idea/deployment.xml
 .idea/dictionaries

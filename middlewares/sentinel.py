@@ -5,7 +5,6 @@ from aiogram.dispatcher.middlewares import BaseMiddleware
 from utils.db_api.models import User
 
 
-# Ban check middleware
 class Sentinel(BaseMiddleware):
     allowed_updates = ["callback_query", "message"]
 

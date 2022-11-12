@@ -9,7 +9,6 @@ from loader import dp
 from data.config import banned_users
 
 
-# Message/Updates processing middleware example
 class BigBrother(BaseMiddleware):
     # 1
     async def on_pre_process_update(self, update: types.Update, data: dict):

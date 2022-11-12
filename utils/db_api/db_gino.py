@@ -1,9 +1,9 @@
 from typing import List
 
-import sqlalchemy as sa
 from aiogram import Dispatcher
 from gino import Gino
-from sqlalchemy import Column, DateTime
+import sqlalchemy as sa
+from sqlalchemy import Column, DateTime, Integer, String
 
 from data import config
 

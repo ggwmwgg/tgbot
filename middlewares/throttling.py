@@ -9,7 +9,6 @@ from aiogram.dispatcher.middlewares import BaseMiddleware
 from aiogram.utils.exceptions import Throttled
 
 
-# Anti-flood middleware
 class ThrottlingMiddleware(BaseMiddleware):
 
     def __init__(self, limit=DEFAULT_RATE_LIMIT, key_prefix='antiflood_'):

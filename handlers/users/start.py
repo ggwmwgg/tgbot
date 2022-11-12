@@ -1,35 +1,42 @@
-import os
-import re
-# from utils.db_api.models import User
-from datetime import datetime
-from random import randint
-
 from aiogram import types
 from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters.builtin import CommandStart, Text
-from aiogram.types import ReplyKeyboardRemove
-from dotenv import load_dotenv
-from twilio.rest import Client
+
+import re
+
+from aiogram.types import ReplyKeyboardRemove, ContentType
 
 from keyboards.default import languages, nmbr, main_menu
 from loader import dp
-from states.orders import Reg
-from utils.db_api import quick_commands
+from states.orders import Reg, Order
+import os
+from dotenv import load_dotenv
+from twilio.rest import Client
+from random import randint
+from data import lang_en
+# from utils.db_api.models import User
+from datetime import datetime
 from utils.misc import rate_limit
+from utils.db_api import quick_commands
 
 
 @rate_limit(5, key="start")
 @dp.message_handler(CommandStart(), state='*') #  state=None
 async def bot_start(message: types.Message):
+    if await quick_commands.select_user(id=message.from_user.id):
+        await message.answer(f'Приступим к оформлению?', reply_markup=main_menu)
+        # await Order.d_or_d.set()
+    else:
+    # await message.answer(f'Здравствуйте, {message.from_user.full_name}!')
+    # Добавить кнопки , добавить мультиязычность
+        await message.answer(f"Здравствуйте, {message.from_user.full_name}!\n"
+                             "Выберите язык обслуживания.\n\n"
+                             f"Hello, {message.from_user.full_name}!\n"
+                             "Please, choose your language\n\n"
+                             f"Keling, {message.from_user.full_name}!\n"
+                             "Avvaliga xizmat ko'rsatish tilini tanlab olaylik", reply_markup=languages)
 
-    await message.answer(f"Здравствуйте, {message.from_user.full_name}!\n"
-                         "Выберите язык обслуживания.\n\n"
-                         f"Hello, {message.from_user.full_name}!\n"
-                         "Please, choose your language\n\n"
-                         f"Keling, {message.from_user.full_name}!\n"
-                         "Avvaliga xizmat ko'rsatish tilini tanlab olaylik", reply_markup=languages)
-
-    await Reg.language.set()
+        await Reg.language.set()
 
 
 @rate_limit(2, key="language")
