@@ -8,6 +8,7 @@ from utils.db_api.schemas.order import Order
 from utils.db_api.schemas.item import Item
 from utils.db_api.schemas.cart import Cart
 from utils.db_api.schemas.branches import Branch
+from utils.misc import get_address_from_coords
 
 
 # Добавить заказ
@@ -258,8 +259,6 @@ async def check_debt_active(id: int):
 
 
 
-    # order = await Order.query.where(Order.id == id).gino.first()
-
 
 # Проверить количество активных неоплаченных заказов
 async def count_active_orders(id: int):
@@ -503,21 +502,110 @@ async def select_active_orders_by_branch(branch: str) -> List[Order]:
 async def select_order_by_id(id: int) -> Order:
     return await Order.query.where(Order.id == id).gino.first()
 
+# Получить список всех товаров
+async def select_all_items() -> List[Item]:
+    list = []
+    for i in await Item.query.gino.all():
+        list.append(i.id)
+    return list
 
-# Изменить русское название блюда
-# Изменить узбекское название блюда
-# Изменить английское название блюда
-# Изменить русское описание блюда
-# Изменить узбекское описание блюда
-# Изменить английское описание блюда
-# Изменить цену блюда
-# Изменить статус доступности блюда
-# Изменить фото блюда
-# Изменить категорию блюда
-# Изменить подкатегорию блюда
-# Выбрать товар по айди
-# Выбрать айди по русскому названию товара
-# Выбрать айди по узбекскому названию товара
-# Выбрать айди по английскому названию товара
+# Обновить список товаров в заказе
+async def update_order_items(order_id: int, items: dict):
+    await Order.update.values(items=items).where(Order.id == order_id).gino.status()
+
+# Обновить цену заказа
+async def update_order_price(order_id: int, price: int, do: str):
+    order = await select_order_by_id(order_id)
+    order_price = 0
+    if do == 'add':
+        order_price = order.total_price + price
+    elif do == 'remove':
+        order_price = order.total_price - price
+    await Order.update.values(total_price=order_price).where(Order.id == order_id).gino.status()
+
+# Вывод текста для админки
+async def admin_text(order_id: int, lang: str) -> str:
+    order = await select_order_by_id(order_id)
+    txt = "<b>Заказ №%s</b>\n\n" % order.id
+    type = ""
+    kok = ""
+    if order.type_delivery == 1:  # Если доставка
+        type = "Доставка"
+        coords = f"{order.lon},{order.lat}"
+        # print(coords)
+        adress = get_address_from_coords(coords)
+        if order.courier_id == 0:
+            courier = "Не назначен"
+        else:
+            courier = await select_user(order.courier_id)
+            courier = f'{courier.name} {courier.number}'
+        kok = "Адрес: %s\nКурьер %s" % (adress[21:], courier)
+    elif order.type_delivery == 2:  # Если самовывоз
+        type = "Самовывоз"
+        kok = "Филиал: %s" % order.branch
+
+    txt += "Тип : %s\n%s\n" % (type, kok)
+    number = await select_number(order.user_id)
+    paid = ""
+    if order.is_paid == 1:
+        paid = "Оплачен"
+    elif order.is_paid == 0:
+        paid = "Не оплачен"
+    txt += "Телефон: %s\nСпособ оплаты: %s\nСтатус оплаты: %s\n" % (number, order.p_type, paid)
+    if order.comment != "Null":
+        txt += "Комментарий: %s\n" % order.comment
+    txt += "\n<b>Содержимое:</b>\n\n"
+    a = order.items
+    # print(a)
+    for i, q in a.items():
+        # print(id, q)
+
+        name = await select_item_name(int(i), lang)
+        # print(name)
+        price = await select_item_price(int(i))
+        total = int(price) * q
+        txt += "<b>%s</b>\n%s x %s = %s\n\n" % (name, price, q, total)
+        # print(txt)
+    if order.type_delivery == 1:
+        txt += "<b>Доставка = </b>%s" % order.delivery_price
+    txt += "\n\n\n<b>Итого: </b>%s\n" % order.total_price
+    status = ""
+    if order.status == 1:
+        status = "В обработке"
+    elif order.status == 2:
+        status = "Подтвержден"
+    elif order.status == 3:
+        status = "Приготовление"
+    elif order.status == 4:
+        status = "Доставка"
+    elif order.status == 5:
+        status = "Доставлен"
+    elif order.status == 6:
+        status = "Отменен"
+    # (1 = активный, 2 = подтвержден, 3 = приготовление, 4 = доставка, 5 = доставлен, 6 = отменен)
+    return txt
+
+# Получить список id товаров в заказе
+async def get_items_in_order(order_id: int) -> List[int]:
+    order = await select_order_by_id(order_id)
+    items = order.items
+    list = []
+    for i, q in items.items():
+        list.append(int(i))
+    return list
+
+# Выбрать id всех курьеров
+async def select_all_couriers() -> List[User]:
+    list = []
+    for i in await User.query.where(User.is_admin == 3).gino.all():
+        list.append(i.id)
+    return list
+
+
+# Назначить курьера на заказ
+async def set_courier(order_id: int, courier_id: int):
+    await Order.update.values(courier_id=courier_id).where(Order.id == order_id).gino.status()
+
+
 
 

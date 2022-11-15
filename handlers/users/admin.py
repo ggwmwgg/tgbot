@@ -6,7 +6,7 @@ from aiogram.dispatcher.filters.builtin import Text, Command
 from aiogram.types import ReplyKeyboardRemove
 
 from keyboards.default import main_menu, languages, ac_main, ac_users, ac_back
-from keyboards.inline import keyboard_markup, lang_markup, ban_markup, rights_markup, orders_a, order_info
+from keyboards.inline import keyboard_markup, lang_markup, ban_markup, rights_markup, orders_a, order_info, order_by_id_quantity
 
 from data import lang_en
 from loader import dp
@@ -502,7 +502,6 @@ async def inline_kb_answer_callback_handler(query: types.CallbackQuery, state: F
 # @dp.callback_query_handler(state=Admin.order_by_ID)
 @dp.message_handler(state=Admin.order_by_ID)
 async def process_order_by_ID(message: types.Message, state: FSMContext):
-    global lang # Для перевода
     user_id = message.from_user.id
     lang = await quick_commands.select_language(user_id)
     id = message.text
@@ -510,44 +509,7 @@ async def process_order_by_ID(message: types.Message, state: FSMContext):
         id = int(id)
         await state.update_data(order_id=id)  # Записываем id заказа в state
         order = await quick_commands.select_order_by_id(id)
-        txt = "<b>Заказ №%s</b>\n\n" % order.id
-        type = ""
-        kok = ""
-        if order.type_delivery == 1:  # Если доставка
-            type = "Доставка"
-            coords = f"{order.lon},{order.lat}"
-            # print(coords)
-            adress = get_address_from_coords(coords)
-            kok = "Адрес: %s" % adress[21:]
-        elif order.type_delivery == 2:  # Если самовывоз
-            type = "Самовывоз"
-            kok = "Филиал: %s" % order.branch
-
-        txt += "Тип : %s\n%s\n" % (type, kok)
-        number = await quick_commands.select_number(order.user_id)
-        paid = ""
-        if order.is_paid == 1:
-            paid = "Оплачен"
-        elif order.is_paid == 0:
-            paid = "Не оплачен"
-        txt += "Телефон: %s\nСпособ оплаты: %s\nСтатус оплаты: %s\n" % (number, order.p_type, paid)
-        if order.comment != "Null":
-            txt += "Комментарий: %s\n" % order.comment
-        txt += "\n<b>Содержимое:</b>\n\n"
-        a = order.items
-        # print(a)
-        for i, q in a.items():
-            # print(id, q)
-
-            name = await quick_commands.select_item_name(int(i), lang)
-            # print(name)
-            price = await quick_commands.select_item_price(int(i))
-            total = int(price) * q
-            txt += "<b>%s</b>\n%s x %s = %s\n\n" % (name, price, q, total)
-            # print(txt)
-        if order.type_delivery == 1:
-            txt += "<b>Доставка = </b>%s" % order.delivery_price
-        txt += "\n\n\n<b>Итого: </b>%s\n" % order.total_price
+        txt = await quick_commands.admin_text(id, lang)
         status = ""
         if order.status == 1:
             status = "В обработке"
@@ -562,7 +524,6 @@ async def process_order_by_ID(message: types.Message, state: FSMContext):
         elif order.status == 6:
             status = "Отменен"
         # (1 = активный, 2 = подтвержден, 3 = приготовление, 4 = доставка, 5 = доставлен, 6 = отменен)
-        await state.update_data(txt=txt)
         txt += "\n<i><b>Статус: %s</b></i>" % status
         # await state.update_data()
 
@@ -574,129 +535,312 @@ async def process_order_by_ID(message: types.Message, state: FSMContext):
         error = "Заказа с таким номером не существует"
         await message.answer(error)
 
-        pass
 
 
 # Хендлер обработки данных при нажатии поиска по ID заказа
 @dp.callback_query_handler(state=Admin.order_by_ID_action)
 async def process_order_by_ID_action(query: types.CallbackQuery, state: FSMContext):
-    global lang
     user_id = query.from_user.id
     status = ""
+    lang = await quick_commands.select_language(user_id)
 
     async with state.proxy() as data:
         order_id = data["order_id"]
-        txt = data["txt"]
+        txt = await quick_commands.admin_text(order_id, lang)
         order_id = int(order_id)
     order = await quick_commands.select_order_by_id(order_id)
     if query.data == "confirmed":
 
         text = ""
+        msg_f_u = "Статус вашего заказа №%s: %s"
+        toxt = "\n<i><b>Статус: %s</b></i>"
+        status = ""
         if order.status == 2:
             status = "Заказ уже подтвержден"
-            toxt = "\n<i><b>Статус: %s</b></i>" % status
-            text = txt + toxt
+        elif order.status == 3:
+            status = "изменен с приготовления на подтвержден"
+        elif order.status == 4:
+            status = "изменен с доставки на подтвержден"
+        elif order.status == 5:
+            status = "изменен с доставлен на подтвержден"
+        elif order.status == 6:
+            status = "изменен с отменен на подтвержден"
         else:
-
             status = "Подтвержден"
-            toxt = "\n<i><b>Статус: %s</b></i>" % status
-            text = txt + toxt
-        msg_f_u = "Ваш заказ №%s подтвержден" % order_id
-        await quick_commands.change_status(order_id, 2)
-
+        toxt = toxt % status
+        text = txt + toxt
+        msg_f_u = msg_f_u % (order_id, status)
         await dp.bot.send_message(order.user_id, msg_f_u, parse_mode="HTML")
+        await quick_commands.change_status(order_id, 2)
         await query.message.edit_text(text, parse_mode="HTML", reply_markup=order_info)
         # pass
     elif query.data == "cooking":
 
         text = ""
+        msg_f_u = "Статус вашего заказа №%s: %s"
+        toxt = "\n<i><b>Статус: %s</b></i>"
+        status = ""
         if order.status == 3:
-            status = "Заказ уже готовится"
-            toxt = "\n<i><b>Статус: %s</b></i>" % status
-            text = txt + toxt
+            status = "Заказ уже в процессе приготовления"
+        elif order.status == 4:
+            status = "изменен с доставка на в процессе приготовления"
+        elif order.status == 5:
+            status = "изменен с доставлен на в процессе приготовления"
+        elif order.status == 6:
+            status = "изменен с отменен на в процессе приготовления"
         else:
-
             status = "Приготовление"
-            toxt = "\n<i><b>Статус: %s</b></i>" % status
-            text = txt + toxt
-        msg_f_u = "Ваш заказ №%s в процессе приготовления" % order_id
-        await quick_commands.change_status(order_id, 3)
-
+        toxt = toxt % status
+        text = txt + toxt
+        msg_f_u = msg_f_u % (order_id, status)
         await dp.bot.send_message(order.user_id, msg_f_u, parse_mode="HTML")
+        await quick_commands.change_status(order_id, 3)
         await query.message.edit_text(text, parse_mode="HTML", reply_markup=order_info)
     elif query.data == "delivery":
         text = ""
+        msg_f_u = "Статус вашего заказа №%s: %s"
+        toxt = "\n<i><b>Статус: %s</b></i>"
+        status = ""
         if order.status == 4:
             status = "Заказ уже доставляется"
-            toxt = "\n<i><b>Статус: %s</b></i>" % status
-            text = txt + toxt
+        elif order.status == 5:
+            status = "изменен с доставлен на доставляется"
+        elif order.status == 6:
+            status = "изменен с отменен на доставляется"
         else:
-
             status = "Доставка"
-            toxt = "\n<i><b>Статус: %s</b></i>" % status
-            text = txt + toxt
-        msg_f_u = "Ваш заказ №%s в процессе доставки" % order_id
-        await quick_commands.change_status(order_id, 4)
-
+        toxt = toxt % status
+        text = txt + toxt
+        msg_f_u = msg_f_u % (order_id, status)
         await dp.bot.send_message(order.user_id, msg_f_u, parse_mode="HTML")
+        await quick_commands.change_status(order_id, 4)
         await query.message.edit_text(text, parse_mode="HTML", reply_markup=order_info)
     elif query.data == "delivered":
         text = ""
+        msg_f_u = "Статус вашего заказа №%s: %s"
+        toxt = "\n<i><b>Статус: %s</b></i>"
+        status = ""
         if order.status == 5:
             status = "Заказ уже доставлен"
-            toxt = "\n<i><b>Статус: %s</b></i>" % status
-            text = txt + toxt
+        elif order.status == 6:
+            status = "изменен с отменен на доставлен"
         else:
-
             status = "Доставлен"
-            toxt = "\n<i><b>Статус: %s</b></i>" % status
-            text = txt + toxt
-        msg_f_u = "Ваш заказ №%s доставлен" % order_id
-        await quick_commands.change_status(order_id, 5)
-
+        toxt = toxt % status
+        text = txt + toxt
+        msg_f_u = msg_f_u % (order_id, status)
         await dp.bot.send_message(order.user_id, msg_f_u, parse_mode="HTML")
+        await quick_commands.change_status(order_id, 5)
         await query.message.edit_text(text, parse_mode="HTML", reply_markup=order_info)
     elif query.data == "payed":
         text = ""
+        status_o = ""
         if order.is_paid == 1:
-            status = "Заказ уже оплачен"
-            toxt = "\n<i><b>Статус: %s</b></i>" % status
-            text = txt + toxt
+            status_o = "Заказ уже оплачен"
         else:
-
-            status = "Оплачен"
-            toxt = "\n<i><b>Статус: %s</b></i>" % status
-            text = txt + toxt
-        msg_f_u = "Ваш заказ №%s оплачен" % order_id
-
+            status_o = "Оплачен"
+            msg_f_u = "Ваш заказ №%s оплачен" % order_id
+            await dp.bot.send_message(order.user_id, msg_f_u, parse_mode="HTML")
         await quick_commands.change_payment_status(order_id, 1)
+        # await query.message.edit_text(text, parse_mode="HTML", reply_markup=order_info)
 
-        await dp.bot.send_message(order.user_id, msg_f_u, parse_mode="HTML")
-        await query.message.edit_text(text, parse_mode="HTML", reply_markup=order_info)
+        try:
+            order = await quick_commands.select_order_by_id(order_id)
+            txt = await quick_commands.admin_text(order_id, lang)
+            status = ""
+            if order.status == 1:
+                status = "В обработке"
+            elif order.status == 2:
+                status = "Подтвержден"
+            elif order.status == 3:
+                status = "Приготовление"
+            elif order.status == 4:
+                status = "Доставка"
+            elif order.status == 5:
+                status = "Доставлен"
+            elif order.status == 6:
+                status = "Отменен"
+            # (1 = активный, 2 = подтвержден, 3 = приготовление, 4 = доставка, 5 = доставлен, 6 = отменен)
+            txt += "\n<i><b>Статус: %s</b></i>" % status
+            txt += "\n\n\n<i>Статус оплаты заказа изменен на <b>%s</b></i>" % status_o
+            await query.message.edit_text(txt, parse_mode="HTML", reply_markup=order_info)
+            #await dp.bot.send_message(message.from_user.id, txt, parse_mode="HTML", reply_markup=order_info)
+
+            await Admin.order_by_ID_action.set()
+
+        except Exception as e:
+            error = "Заказа с таким номером не существует"
+            # await dp.bot.answer_callback_query(user_id, text=error, show_alert=True)
+            #await query.answer(error, show_alert=True)
+            #await dp.bot.send_message(user_id, error)
 
     elif query.data == "not_payed":
         text = ""
+        status_o = ""
         if order.is_paid == 0:
-            status = "Заказ не оплачен"
-            toxt = "\n<i><b>Статус: %s</b></i>" % status
-            text = txt + toxt
+            status_o = "Заказ не оплачен"
         else:
 
-            status = "Не оплачен"
-            toxt = "\n<i><b>Статус: %s</b></i>" % status
-            text = txt + toxt
-        msg_f_u = "Ваш заказ №%s имеет статус неоплачен" % order_id
-
+            status_o = "Не оплачен"
+            msg_f_u = "Ваш заказ №%s имеет статус неоплаченного" % order_id
+            await dp.bot.send_message(order.user_id, msg_f_u, parse_mode="HTML")
         await quick_commands.change_payment_status(order_id, 0)
+        try:
+            order = await quick_commands.select_order_by_id(order_id)
+            txt = await quick_commands.admin_text(order_id, lang)
+            status = ""
+            if order.status == 1:
+                status = "В обработке"
+            elif order.status == 2:
+                status = "Подтвержден"
+            elif order.status == 3:
+                status = "Приготовление"
+            elif order.status == 4:
+                status = "Доставка"
+            elif order.status == 5:
+                status = "Доставлен"
+            elif order.status == 6:
+                status = "Отменен"
+            # (1 = активный, 2 = подтвержден, 3 = приготовление, 4 = доставка, 5 = доставлен, 6 = отменен)
+            txt += "\n<i><b>Статус: %s</b></i>" % status
+            txt += "\n\n\n<i>Статус оплаты заказа изменен на <b>%s</b></i>" % status_o
+            await query.message.edit_text(txt, parse_mode="HTML", reply_markup=order_info)
+            await dp.bot.answer_callback_query(query.id, "koker", show_alert=True)
+            # await dp.bot.send_message(message.from_user.id, txt, parse_mode="HTML", reply_markup=order_info)
 
-        await dp.bot.send_message(order.user_id, msg_f_u, parse_mode="HTML")
-        await query.message.edit_text(text, parse_mode="HTML", reply_markup=order_info)
+            await Admin.order_by_ID_action.set()
+
+        except Exception as e:
+            error = "Заказа с таким номером не существует"
+            # await dp.bot.answer_callback_query(user_id,text=error, show_alert=True)
+            # await query.answer(error, show_alert=True)
+            # await dp.bot.send_message(user_id, error)
     elif query.data == "add_pos":
-        pass
+        status = ""
+        if order.status == 1:
+            status = "В обработке"
+        elif order.status == 2:
+            status = "Подтвержден"
+        elif order.status == 3:
+            status = "Приготовление"
+        elif order.status == 4:
+            status = "Доставка"
+        elif order.status == 5:
+            status = "Доставлен"
+        elif order.status == 6:
+            status = "Отменен"
+        toxt = "\n<i><b>Статус: %s</b></i>\n\n" % status
+        text = txt + toxt
+        tix_t = "Какой товар добавить?\n\n"
+        text += tix_t
+
+        items_keyboard = types.InlineKeyboardMarkup(row_width=1, one_time_keyboard=True)
+        items_list = await quick_commands.select_all_items()
+        #print(items_list)
+        #print(order.items)
+
+        for i in items_list:
+            id = int(i)
+            item = await quick_commands.get_item_by_id(id)
+            #print(item.id)
+            if lang == "ru":
+                # print(item.name_ru)
+                items_keyboard.add(types.InlineKeyboardButton(item.name_ru, callback_data=f"{item.id}"))
+            elif lang == "en":
+                items_keyboard.add(types.InlineKeyboardButton(item.name_en, callback_data=f"{item.id}"))
+            elif lang == "uz":
+                items_keyboard.add(types.InlineKeyboardButton(item.name_uz, callback_data=f"{item.id}"))
+
+
+
+
+
+        # await query.message.edit_reply_markup(reply_markup=items_keyboard)
+        await query.message.edit_text(text, parse_mode="HTML", reply_markup=items_keyboard)
+        await Admin.order_add_item.set()
+
     elif query.data == "remove_pos":
-        pass
+        status = ""
+        if order.status == 1:
+            status = "В обработке"
+        elif order.status == 2:
+            status = "Подтвержден"
+        elif order.status == 3:
+            status = "Приготовление"
+        elif order.status == 4:
+            status = "Доставка"
+        elif order.status == 5:
+            status = "Доставлен"
+        elif order.status == 6:
+            status = "Отменен"
+        toxt = "\n<i><b>Статус: %s</b></i>\n\n" % status
+        text = txt + toxt
+        tix_t = "Какой товар удалить?\n\n"
+        text += tix_t
+
+        items_keyboard = types.InlineKeyboardMarkup(row_width=1, one_time_keyboard=True)
+        items_list = await quick_commands.get_items_in_order(order_id)
+        # print(items_list)
+        # print(order.items)
+
+        for i in items_list:
+            id = int(i)
+            item = await quick_commands.get_item_by_id(id)
+            #print(item.id)
+            if lang == "ru":
+                # print(item.name_ru)
+                items_keyboard.add(types.InlineKeyboardButton(item.name_ru, callback_data=f"{item.id}"))
+            elif lang == "en":
+                items_keyboard.add(types.InlineKeyboardButton(item.name_en, callback_data=f"{item.id}"))
+            elif lang == "uz":
+                items_keyboard.add(types.InlineKeyboardButton(item.name_uz, callback_data=f"{item.id}"))
+
+
+
+
+
+        # await query.message.edit_reply_markup(reply_markup=items_keyboard)
+        await query.message.edit_text(text, parse_mode="HTML", reply_markup=items_keyboard)
+        await Admin.order_remove_item.set()
     elif query.data == "courier_set":
-        pass
+        status = ""
+        if order.status == 1:
+            status = "В обработке"
+        elif order.status == 2:
+            status = "Подтвержден"
+        elif order.status == 3:
+            status = "Приготовление"
+        elif order.status == 4:
+            status = "Доставка"
+        elif order.status == 5:
+            status = "Доставлен"
+        elif order.status == 6:
+            status = "Отменен"
+        toxt = "\n<i><b>Статус: %s</b></i>\n\n" % status
+        text = txt + toxt
+
+        select_courier_keyboard = types.InlineKeyboardMarkup(row_width=1, one_time_keyboard=True)
+        couriers_list = await quick_commands.select_all_couriers()
+        print(couriers_list)
+        # print(order.items)
+
+        for i in couriers_list:
+            user = await quick_commands.select_user(i)
+
+            courier_info = f"{user.number} {user.name}"
+            # print(item.id)
+            select_courier_keyboard.add(types.InlineKeyboardButton(courier_info, callback_data=f"{user.id}"))
+
+
+        if order.type_delivery == 1:
+            tix_t = "Какого курьера назначить?\n\n"
+            text += tix_t
+            await query.message.edit_text(text, parse_mode="HTML", reply_markup=select_courier_keyboard)
+            await Admin.order_set_courier.set()
+        else:
+            tix_t = "Невозможно назначить курьера на самовывоз\n\n"
+            text += tix_t
+            await query.message.edit_text(text, parse_mode="HTML", reply_markup=order_info)
     elif query.data == "cancel":
         text = ""
         if order.status == 6:
@@ -708,10 +852,9 @@ async def process_order_by_ID_action(query: types.CallbackQuery, state: FSMConte
             status = "Отменен"
             toxt = "\n<i><b>Статус: %s</b></i>" % status
             text = txt + toxt
-        msg_f_u = "Ваш заказ №%s отменен" % order_id
+            msg_f_u = "Ваш заказ №%s отменен" % order_id
+            await dp.bot.send_message(order.user_id, msg_f_u, parse_mode="HTML")
         await quick_commands.change_status(order_id, 6)
-
-        await dp.bot.send_message(order.user_id, msg_f_u, parse_mode="HTML")
         await query.message.edit_text(text, parse_mode="HTML", reply_markup=order_info)
     elif query.data == "back":
         await query.message.delete()
@@ -739,3 +882,312 @@ async def process_order_by_ID_action(query: types.CallbackQuery, state: FSMConte
         #  msg = await message.answer(txt, reply_markup=orders_a)
         await state.update_data(msg_id=msg.message_id)
         await Admin.orders.set()
+
+# Хендлер обработки предмета на добавление в заказ и вывод клавиатуры с количеством
+@dp.callback_query_handler(state=Admin.order_add_item)
+async def process_order_add_action(query: types.CallbackQuery, state: FSMContext):
+    user_id = query.from_user.id
+    status = ""
+    lang = await quick_commands.select_language(user_id)
+    items_list = await quick_commands.select_all_items()
+    await state.update_data(item_id=query.data)
+    item_id = int(query.data)
+    async with state.proxy() as data:
+        order_id = data["order_id"]
+
+        order_id = int(order_id)
+        txt = await quick_commands.admin_text(order_id, lang)
+        i_id = data["item_id"]
+    order = await quick_commands.select_order_by_id(order_id)
+    if item_id in items_list:
+        item = await quick_commands.get_item_by_id(item_id)
+        item_name = ""
+        if lang == "ru":
+            item_name = item.name_ru
+        elif lang == "en":
+            item_name = item.name_en
+        elif lang == "uz":
+            item_name = item.name_uz
+        status = ""
+        if order.status == 1:
+            status = "В обработке"
+        elif order.status == 2:
+            status = "Подтвержден"
+        elif order.status == 3:
+            status = "Приготовление"
+        elif order.status == 4:
+            status = "Доставка"
+        elif order.status == 5:
+            status = "Доставлен"
+        elif order.status == 6:
+            status = "Отменен"
+        toxt = "\n<i><b>Статус: %s</b></i>\n\n" % status
+        text = txt + toxt
+        tix_t = "Выбран товар: <b>%s</b>. \nВыберите количество из списка ниже.\n\n" % item_name
+        text += tix_t
+        await query.message.edit_text(text, parse_mode="HTML", reply_markup=order_by_id_quantity)
+        await Admin.order_add_item_quantity.set()
+
+
+# Хендлер обработки предмета на удаление из заказа и вывод клавиатуры с количеством
+@dp.callback_query_handler(state=Admin.order_remove_item)
+async def process_order_remove_action(query: types.CallbackQuery, state: FSMContext):
+    user_id = query.from_user.id
+    status = ""
+    lang = await quick_commands.select_language(user_id)
+    await state.update_data(item_id=query.data)
+    item_id = int(query.data)
+    async with state.proxy() as data:
+        order_id = data["order_id"]
+
+        order_id = int(order_id)
+        txt = await quick_commands.admin_text(order_id, lang)
+        i_id = data["item_id"]
+    order = await quick_commands.select_order_by_id(order_id)
+    items_list = await quick_commands.get_items_in_order(order.id)
+    if item_id in items_list:
+        item = await quick_commands.get_item_by_id(item_id)
+        item_name = ""
+        if lang == "ru":
+            item_name = item.name_ru
+        elif lang == "en":
+            item_name = item.name_en
+        elif lang == "uz":
+            item_name = item.name_uz
+        status = ""
+        if order.status == 1:
+            status = "В обработке"
+        elif order.status == 2:
+            status = "Подтвержден"
+        elif order.status == 3:
+            status = "Приготовление"
+        elif order.status == 4:
+            status = "Доставка"
+        elif order.status == 5:
+            status = "Доставлен"
+        elif order.status == 6:
+            status = "Отменен"
+        toxt = "\n<i><b>Статус: %s</b></i>\n\n" % status
+        text = txt + toxt
+        tix_t = "Выбран товар: <b>%s</b>. \nВыберите количество из списка ниже.\n\n" % item_name
+        text += tix_t
+        number = order.items[f'{item_id}']
+        # print(number)
+        quan = types.InlineKeyboardMarkup(row_width=3, one_time_keyboard=True)
+        rem = number % 3
+        rang = range(1, number, 3)
+        del_e = int(number / 3) - 1
+        count = 0
+        for i in rang:
+            if count <= del_e:
+                count += 1
+                quan.row(types.InlineKeyboardButton(text=f"{i}", callback_data=f"{i}"),
+                            types.InlineKeyboardButton(text=f"{i + 1}", callback_data=f"{i + 1}"),
+                            types.InlineKeyboardButton(text=f"{i + 2}", callback_data=f"{i + 2}"))
+        if rem % 2 == 0:
+            for k in range(0, rem, 2):
+                quan.add(types.InlineKeyboardButton(text=f"{number - rem + k + 1}", callback_data=f"{number - rem + k + 1}"),
+                         types.InlineKeyboardButton(text=f"{number - rem + k + 2}", callback_data=f"{number - rem + k + 2}"))
+        if rem % 2 != 0:
+            for k in range(0, rem, 1):
+                quan.add(types.InlineKeyboardButton(text=f"{number - rem + k + 1}", callback_data=f"{number - rem + k + 1}"))
+
+
+        await query.message.edit_text(text, parse_mode="HTML", reply_markup=quan)
+        await Admin.order_remove_item_quantity.set()
+
+
+# Хендлер обработки количества выбранного товара и обновление сообщения с содержимым
+@dp.callback_query_handler(state=Admin.order_add_item_quantity)
+async def process_order_item_action(query: types.CallbackQuery, state: FSMContext):
+    user_id = query.from_user.id
+    lang = await quick_commands.select_language(user_id)
+
+
+    quantity = int(query.data)
+    async with state.proxy() as data:
+        order_id = data["order_id"]
+        order_id = int(order_id)
+        i_id = data["item_id"]
+    order = await quick_commands.select_order_by_id(order_id)
+    item_name = await quick_commands.select_item_name(int(i_id), lang)
+    if quantity in range(26):
+        order_items = order.items
+        #print(order.items)
+        try:
+            order_items[i_id] += quantity
+        except KeyError:
+            order_items[i_id] = quantity
+        #print(order_items)
+        item = await quick_commands.get_item_by_id(int(i_id))
+        price = item.price * quantity
+        # print(price)
+        await quick_commands.update_order_price(order_id, price, "add")
+        await quick_commands.update_order_items(order_id, order_items)
+        id = order_id
+        try:
+            id = int(id)
+            await state.update_data(order_id=id)  # Записываем id заказа в state
+            order = await quick_commands.select_order_by_id(id)
+            txt = await quick_commands.admin_text(order.id, lang)
+            status = ""
+            if order.status == 1:
+                status = "В обработке"
+            elif order.status == 2:
+                status = "Подтвержден"
+            elif order.status == 3:
+                status = "Приготовление"
+            elif order.status == 4:
+                status = "Доставка"
+            elif order.status == 5:
+                status = "Доставлен"
+            elif order.status == 6:
+                status = "Отменен"
+            # (1 = активный, 2 = подтвержден, 3 = приготовление, 4 = доставка, 5 = доставлен, 6 = отменен)
+            await state.update_data(txt=txt)
+            txt += "\n<i><b>Статус: %s</b></i>" % status
+            # await state.update_data()
+            txt +="\n\n<b>Товар: <i>%s %sшт</i> добавлен в корзину.\n\n\nВыберите действие</b>"
+            txt = txt % (item_name, query.data)
+            await query.message.edit_text(txt, parse_mode="HTML", reply_markup=order_info)
+            #await dp.bot.send_message(message.from_user.id, txt, parse_mode="HTML", reply_markup=order_info)
+
+            await Admin.order_by_ID_action.set()
+
+        except Exception as e:
+            error = "Заказа с таким номером не существует"
+            await dp.bot.send_message(user_id, error)
+
+
+# Хендлер обработки количества выбранного товара для удаления и обновление сообщения с содержимым
+@dp.callback_query_handler(state=Admin.order_remove_item_quantity)
+async def process_order_itemr_action(query: types.CallbackQuery, state: FSMContext):
+    user_id = query.from_user.id
+    lang = await quick_commands.select_language(user_id)
+
+
+    quantity = int(query.data)
+    async with state.proxy() as data:
+        order_id = data["order_id"]
+        order_id = int(order_id)
+        i_id = data["item_id"]
+    order = await quick_commands.select_order_by_id(order_id)
+    item_name = await quick_commands.select_item_name(int(i_id), lang)
+    if quantity in range(1, order.items[i_id] + 1):
+        order_items = order.items
+        #print(order.items)
+        print(order_items)
+        order_items[i_id] -= quantity
+        if order.items[i_id] == 0:
+            del order.items[str(i_id)]
+
+        #print(order_items)
+        item = await quick_commands.get_item_by_id(int(i_id))
+        price = item.price * quantity
+        print(order_items)
+        # print(price)
+        await quick_commands.update_order_price(order_id, price, "remove")
+        await quick_commands.update_order_items(order_id, order_items)
+        id = order_id
+        try:
+            id = int(id)
+            await state.update_data(order_id=id)  # Записываем id заказа в state
+            order = await quick_commands.select_order_by_id(id)
+            txt = await quick_commands.admin_text(order.id, lang)
+            status = ""
+            if order.status == 1:
+                status = "В обработке"
+            elif order.status == 2:
+                status = "Подтвержден"
+            elif order.status == 3:
+                status = "Приготовление"
+            elif order.status == 4:
+                status = "Доставка"
+            elif order.status == 5:
+                status = "Доставлен"
+            elif order.status == 6:
+                status = "Отменен"
+            # (1 = активный, 2 = подтвержден, 3 = приготовление, 4 = доставка, 5 = доставлен, 6 = отменен)
+            await state.update_data(txt=txt)
+            txt += "\n<i><b>Статус: %s</b></i>" % status
+            # await state.update_data()
+            txt +="\n\n<b>Товар: <i>%s %sшт</i> удален из корзины.\n\n\nВыберите действие</b>"
+            txt = txt % (item_name, query.data)
+            await query.message.edit_text(txt, parse_mode="HTML", reply_markup=order_info)
+            #await dp.bot.send_message(message.from_user.id, txt, parse_mode="HTML", reply_markup=order_info)
+
+            await Admin.order_by_ID_action.set()
+
+        except Exception as e:
+            error = "Заказа с таким номером не существует"
+            await dp.bot.send_message(user_id, error)
+
+
+# Хендлер установки курьера на заказ и отправки нужной информации курьеру
+@dp.callback_query_handler(state=Admin.order_set_courier)
+async def process_order_add_action(query: types.CallbackQuery, state: FSMContext):
+    user_id = query.from_user.id
+    async with state.proxy() as data:
+        order_id = data["order_id"]
+        order_id = int(order_id)
+    txt = await quick_commands.admin_text(order_id, "ru")
+    order = await quick_commands.select_order_by_id(order_id)
+    couriers_list = await quick_commands.select_all_couriers()
+    courier = query.data
+    courier_int = int(courier)
+    await quick_commands.set_courier(order_id, courier_int)
+    cour = await quick_commands.select_user(courier_int)
+    if courier_int in couriers_list:
+        status = ""
+        if order.status == 1:
+            status = "В обработке"
+        elif order.status == 2:
+            status = "Подтвержден"
+        elif order.status == 3:
+            status = "Приготовление"
+        elif order.status == 4:
+            status = "Доставка"
+        elif order.status == 5:
+            status = "Доставлен"
+        elif order.status == 6:
+            status = "Отменен"
+        toxt = "\n<i><b>Статус: %s</b></i>\n\n" % status
+        text = txt + toxt
+        tix_t = "Курьер <b>%s</b> назначен\n\n" % cour.number
+        text += tix_t
+        cour_txt = "<i>Вам назначен заказ <b>№%s</b></i>\n\n" % order_id
+        # print(items_list)
+        # print(order.items)
+
+        # await query.message.edit_reply_markup(reply_markup=items_keyboard)
+
+        await dp.bot.send_message(courier_int, cour_txt, parse_mode="HTML", reply_markup=order_info)
+        await query.message.edit_text(text, parse_mode="HTML", reply_markup=order_info)
+        await Admin.order_by_ID.set()
+    else:
+        status = ""
+        if order.status == 1:
+            status = "В обработке"
+        elif order.status == 2:
+            status = "Подтвержден"
+        elif order.status == 3:
+            status = "Приготовление"
+        elif order.status == 4:
+            status = "Доставка"
+        elif order.status == 5:
+            status = "Доставлен"
+        elif order.status == 6:
+            status = "Отменен"
+        toxt = "\n<i><b>Статус: %s</b></i>\n\n" % status
+        text = txt + toxt
+        tix_t = "Такого курьера не существует\n\n"
+        text += tix_t
+
+        # print(items_list)
+        # print(order.items)
+
+        # await query.message.edit_reply_markup(reply_markup=items_keyboard)
+        await query.message.edit_text(text, parse_mode="HTML", reply_markup=order_info)
+        await Admin.order_by_ID.set()
+
+

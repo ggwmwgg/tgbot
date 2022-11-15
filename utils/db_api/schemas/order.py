@@ -22,7 +22,7 @@ class Order(TimedBaseModel):
     lon = Column(Float, default=0)
     lat = Column(Float, default=0)
     branch = Column(String(100))
-    #courier_id = Column(Integer, default=0)
+    courier_id = Column(Integer, default=0)
     date_paid = Column(String(100), default='Null')
 
 

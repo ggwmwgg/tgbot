@@ -67,11 +67,12 @@ async def comment_order_query(query: types.CallbackQuery, state: FSMContext):
     id = query.from_user.id
     lang = await quick_commands.select_language(id)
     async with state.proxy() as data:
-        msg_id = data['msg']
+        msg_id = data['msg_id']
     if query.data == "no_comm":
         text = "<b>Напишите комментарий к заказу:</b>\n\nКомментариев не добавлено"
-        await query.message.delete()
-        await dp.bot.send_message(chat_id=id, text=text, parse_mode="HTML", reply_markup=None)
+        await query.message.edit_text(text=text, parse_mode="HTML", reply_markup=None)
+        #await query.message.delete()
+        #await dp.bot.send_message(chat_id=id, text=text, parse_mode="HTML", reply_markup=None)
         # await query.message.delete()
         lilo = await dp.bot.send_message(chat_id=id, text="<b>Выберите способ оплаты:</b>", parse_mode="HTML", reply_markup=payment_type)
         await state.update_data(msg_id=lilo['message_id'])
@@ -81,7 +82,7 @@ async def comment_order_query(query: types.CallbackQuery, state: FSMContext):
         # print(query.message)
 
         text = "<b>Напишите комментарий к заказу\n</b>"
-        await dp.bot.delete_message(chat_id=id, message_id=query.message.message_id) # Исправить ошибку
+        await dp.bot.delete_message(chat_id=id, message_id=query.message.message_id)
         cats = await quick_commands.get_categories(lang)
         cat_lan = ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True, row_width=2).add(
             *[KeyboardButton(text=cat) for cat in cats])
@@ -97,6 +98,7 @@ async def comment_comm_msg(message: types.Message, state: FSMContext):
     await state.update_data(comment=message.text)
     async with state.proxy() as data:
         msg_id = data['msg_id']
+        print(msg_id)
     await dp.bot.edit_message_text(chat_id=id, message_id=msg_id, text="<b>Комментарий:</b>\n\n", parse_mode="HTML")
     lilo = await message.answer(text="<b>Выберите способ оплаты:</b>", parse_mode="HTML", reply_markup=payment_type)
     await state.update_data(msg_id=lilo['message_id'])

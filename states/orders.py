@@ -52,6 +52,11 @@ class Admin(StatesGroup):
     orders = State()
     order_by_ID = State()
     order_by_ID_action = State()
+    order_add_item = State()
+    order_remove_item = State()
+    order_add_item_quantity = State()
+    order_remove_item_quantity = State()
+    order_set_courier = State()
     cats = State()
     items = State()
 

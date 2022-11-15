@@ -54,3 +54,31 @@ order_info.row(types.InlineKeyboardButton("Добавить позицию", cal
 order_info.row(types.InlineKeyboardButton("Отменить заказ", callback_data='cancel'))
 order_info.row(types.InlineKeyboardButton("Назначить курьера", callback_data='courier_set'))
 order_info.row(types.InlineKeyboardButton("Назад", callback_data='back'))
+
+
+order_by_id_quantity = types.InlineKeyboardMarkup(row_width=5)
+order_by_id_quantity.add(types.InlineKeyboardButton("1", callback_data="1"),
+                         types.InlineKeyboardButton("2", callback_data="2"),
+                         types.InlineKeyboardButton("3", callback_data='3'),
+                         types.InlineKeyboardButton("4", callback_data='4'),
+                         types.InlineKeyboardButton("5", callback_data='5'))
+order_by_id_quantity.add(types.InlineKeyboardButton("6", callback_data="6"),
+                         types.InlineKeyboardButton("7", callback_data="7"),
+                         types.InlineKeyboardButton("8", callback_data='8'),
+                         types.InlineKeyboardButton("9", callback_data='9'),
+                         types.InlineKeyboardButton("10", callback_data='10'))
+order_by_id_quantity.add(types.InlineKeyboardButton("11", callback_data="11"),
+                         types.InlineKeyboardButton("12", callback_data="12"),
+                         types.InlineKeyboardButton("13", callback_data='13'),
+                         types.InlineKeyboardButton("14", callback_data='14'),
+                         types.InlineKeyboardButton("15", callback_data='15'))
+order_by_id_quantity.add(types.InlineKeyboardButton("16", callback_data="16"),
+                         types.InlineKeyboardButton("17", callback_data="17"),
+                         types.InlineKeyboardButton("18", callback_data='18'),
+                         types.InlineKeyboardButton("19", callback_data='19'),
+                         types.InlineKeyboardButton("20", callback_data='20'))
+order_by_id_quantity.add(types.InlineKeyboardButton("21", callback_data="21"),
+                         types.InlineKeyboardButton("22", callback_data="22"),
+                         types.InlineKeyboardButton("23", callback_data='23'),
+                         types.InlineKeyboardButton("24", callback_data='24'),
+                         types.InlineKeyboardButton("25", callback_data='25'))
