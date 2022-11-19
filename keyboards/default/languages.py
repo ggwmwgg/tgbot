@@ -52,7 +52,7 @@ main_menu = ReplyKeyboardMarkup(
         ],
         [
             KeyboardButton(text=lang_en.leave_feedback_eng),
-            KeyboardButton(text=lang_en.my_points_eng)
+            KeyboardButton(text="My orders")
         ],
         [
             KeyboardButton(text=lang_en.contacts_eng),

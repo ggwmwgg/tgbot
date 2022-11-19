@@ -86,8 +86,8 @@ async def settings_main(query: types.CallbackQuery, state: FSMContext):
         await Settings.number.set()
     elif query.data == "back":
         text = "С чего начнем?"
-        await query.message.delete()
-        await dp.bot.send_message(query.from_user.id, text, parse_mode='HTML', reply_markup=nmbr_s)
+        # await query.message.delete()
+        await dp.bot.send_message(query.from_user.id, text, parse_mode='HTML', reply_markup=main_menu)
         await state.finish()
 
 

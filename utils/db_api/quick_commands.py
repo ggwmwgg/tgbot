@@ -623,12 +623,12 @@ async def set_courier(order_id: int, courier_id: int):
 # Добавить 1 к количеству заказов пользователя
 async def add_order_to_user(user_id: int):
     user = await select_user(user_id)
-    await User.update.values(orders=user.orders + 1).where(User.id == user_id).gino.status()
+    await User.update.values(orders_no=user.orders_no + 1).where(User.id == user_id).gino.status()
 
 # Удалить 1 из количества заказов пользователя
 async def remove_order_from_user(user_id: int):
     user = await select_user(user_id)
-    await User.update.values(orders=user.orders - 1).where(User.id == user_id).gino.status()
+    await User.update.values(orders_no=user.orders_no - 1).where(User.id == user_id).gino.status()
 
 # Проверить есть ли пользователи с таким номером
 async def check_number(number: str) -> bool:
