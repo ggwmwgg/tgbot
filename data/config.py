@@ -10,10 +10,7 @@ PGUSER = str(os.getenv("PGUSER"))
 PGPASSWORD = str(os.getenv("PGPASSWORD"))
 DATABASE = str(os.getenv("DATABASE"))
 
-admins = [
-    33180657,
-    456954476
-]
+cashback = 0.05 # 5% cashback
 
 ip = os.getenv("ip")
 db_host = ip  # Если вы запускаете базу не через докер!
@@ -28,10 +25,5 @@ redis = {
     'address': (ip, 6379),
     'encoding': 'utf8'
 }
-
-banned_users = [
-    123421342,
-    432412341
-]
 
 POSTGRES_URI = f"postgresql://{PGUSER}:{PGPASSWORD}@{db_host}/{DATABASE}"

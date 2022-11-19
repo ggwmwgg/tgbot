@@ -10,6 +10,7 @@ from states.orders import Order, Reg
 from utils.db_api import quick_commands
 from keyboards.inline import no_comm, payment_type, conf
 from data import lang_en
+from data.config import cashback as cb
 # import os
 # from dotenv import load_dotenv
 # from twilio.rest import Client
@@ -40,7 +41,7 @@ async def start_order(message: types.Message, state: FSMContext):
         await lil.delete()
         lul = await message.answer("Добавьте комментарий к вашему заказу\nИли нажмите на соответствующую кнопку\n", reply_markup=no_comm)
         msg = lul['message_id']
-        await state.update_data(msg=msg)
+        await state.update_data(msg_id=msg)
         await Order.menu_confirm.set()
     else:
         await message.answer("Ваша корзина пуста", reply_markup=main_menu)
@@ -66,8 +67,8 @@ async def comment_order_query(query: types.CallbackQuery, state: FSMContext):
     global lang
     id = query.from_user.id
     lang = await quick_commands.select_language(id)
-    async with state.proxy() as data:
-        msg_id = data['msg_id']
+    #async with state.proxy() as data:
+        #msg_id = data['msg_id']
     if query.data == "no_comm":
         text = "<b>Напишите комментарий к заказу:</b>\n\nКомментариев не добавлено"
         await query.message.edit_text(text=text, parse_mode="HTML", reply_markup=None)
@@ -98,7 +99,7 @@ async def comment_comm_msg(message: types.Message, state: FSMContext):
     await state.update_data(comment=message.text)
     async with state.proxy() as data:
         msg_id = data['msg_id']
-        print(msg_id)
+        # print(msg_id)
     await dp.bot.edit_message_text(chat_id=id, message_id=msg_id, text="<b>Комментарий:</b>\n\n", parse_mode="HTML")
     lilo = await message.answer(text="<b>Выберите способ оплаты:</b>", parse_mode="HTML", reply_markup=payment_type)
     await state.update_data(msg_id=lilo['message_id'])
@@ -179,8 +180,8 @@ async def payment_order_query(query: types.CallbackQuery, state: FSMContext):
 
 
     if query.data == "cash":
-
-        await dp.bot.edit_message_text(chat_id=id, message_id=msg_id, text=text_edit, parse_mode="HTML")
+        await query.message.edit_text(text_edit, parse_mode="html")
+        # await dp.bot.edit_message_text(chat_id=id, message_id=msg_id, text=text_edit, parse_mode="HTML")
         lilo = await dp.bot.send_message(chat_id=id, text=text, reply_markup=conf)
         await state.update_data(msg_id=lilo['message_id'])
         await state.update_data(type=type)
@@ -194,7 +195,7 @@ async def payment_order_query(query: types.CallbackQuery, state: FSMContext):
 
         pass
     elif query.data == "back":
-        await dp.bot.delete_message(chat_id=id, message_id=msg_id)
+        await query.message.delete()
         if await quick_commands.select_cart(id):
 
             lul = await dp.bot.send_message(chat_id=id, text="Добавьте комментарий к вашему заказу\nИли нажмите на соответствующую кнопку\n",
@@ -218,12 +219,12 @@ async def menu_confirmed(query: types.CallbackQuery, state: FSMContext):
     id = query.from_user.id
     user = await quick_commands.select_user(id)
     async with state.proxy() as data:
-        msg_id = data['msg_id']
+        # msg_id = data['msg_id']
         type = data['type']
         txt_i = data['text']
         total_price = data['price_total']
         delivery_price = data['delivery_price']
-        cashback = int(total_price * 0.01)
+        cashback = int(total_price * cb)
         type_delivery = user.last
         lon = user.longitude
         lat = user.latitude
@@ -232,17 +233,13 @@ async def menu_confirmed(query: types.CallbackQuery, state: FSMContext):
         if type == "Наличные":
             is_paid = 0
             p_type = "Cash"
-
             items = {}
             for i in await quick_commands.select_cart(id):
                 items[i.item_id] = i.quantity
-            print(items)
             try:
                 comment = data['comment']
             except:
                 comment = "Null"
-
-
             await quick_commands.add_order(id, p_type, items, comment, total_price, delivery_price, cashback,
                                            type_delivery, is_paid, lon, lat, branch)
             order = await quick_commands.select_last_order_by_id(id)
@@ -251,7 +248,7 @@ async def menu_confirmed(query: types.CallbackQuery, state: FSMContext):
             for i in await quick_commands.select_operators():
                 await dp.bot.send_message(chat_id=i, text=for_admins)
             await quick_commands.clear_cart_by_user_id(id)
-            await dp.bot.delete_message(chat_id=id, message_id=msg_id)
+            await query.message.delete()
             await dp.bot.send_message(chat_id=id, text=txt, parse_mode="HTML", reply_markup=main_menu)
             await state.finish()
         if type == "Click":
@@ -260,7 +257,8 @@ async def menu_confirmed(query: types.CallbackQuery, state: FSMContext):
             pass
 
     elif query.data == "no":
-        await dp.bot.delete_message(chat_id=id, message_id=msg_id)
+        await query.message.delete()
+        # await dp.bot.delete_message(chat_id=id, message_id=msg_id)
         lilo = await dp.bot.send_message(chat_id=id, text="<b>Выберите способ оплаты:</b>", parse_mode="HTML", reply_markup=payment_type)
         await state.update_data(msg_id=lilo['message_id'])
         await Order.menu_confirm_payment.set()

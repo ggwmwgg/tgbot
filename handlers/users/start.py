@@ -55,17 +55,17 @@ async def language(message: types.Message, state: FSMContext):
     await state.update_data(user_id=user_id, chat_id=chat_id)
     if language == "Русский":
         await message.answer(f"Ваш язык: Русский", reply_markup=ReplyKeyboardRemove())
-        await state.update_data(language='ru')
+        await state.update_data(lang='ru')
         await message.answer(f"Как к вам обращаться?")
         await Reg.next()
     elif language == "O'zbek":
         await message.answer(f"Sizning tilingiz: O'zbek", reply_markup=ReplyKeyboardRemove())
-        await state.update_data(language='uz')
+        await state.update_data(lang='uz')
         await message.answer(f"Sizga qanday nom berishim kerak?")
         await Reg.next()
     elif language == "English":
         await message.answer(f"Your language set to: English", reply_markup=ReplyKeyboardRemove())
-        await state.update_data(language='en')
+        await state.update_data(lang='en')
         await message.answer(f"What is your name?")
         await Reg.next()
     else:
@@ -96,21 +96,23 @@ async def nn(message: types.Message, state: FSMContext):
     result = re.match(pattern, number)
 
     if result:
-        await state.update_data(number=number)
+        if await quick_commands.check_number(number):
+            await message.answer("Данный номер уже зарегистрирован\n\nВведите другой номер")
+        else:
 
-        load_dotenv()
-        verification_code = str(randint(100000, 999999))
-        account = str(os.getenv("account_twilio"))
-        token = str(os.getenv("token_twilio"))
-        client = Client(account, token)
+            load_dotenv()
+            verification_code = str(randint(100000, 999999))
+            account = str(os.getenv("account_twilio"))
+            token = str(os.getenv("token_twilio"))
+            client = Client(account, token)
 
-        # messages = client.messages.create(to=f"{number}", from_="+14632231765",
-        #                                  body=f"GGsellbot: {verification_code}")
+            # messages = client.messages.create(to=f"{number}", from_="+14632231765",
+            #                                  body=f"GGsellbot: {verification_code}")
 
-        await message.answer(f"На ваш номер был отправлен код, пожалуйста введите его ниже. {verification_code}",
-                             reply_markup=ReplyKeyboardRemove())
-        await state.update_data(verification_code=verification_code)
-        await Reg.next()
+            await message.answer(f"На ваш номер был отправлен код, пожалуйста введите его ниже. {verification_code}",
+                                 reply_markup=ReplyKeyboardRemove())
+            await state.update_data(verification_code=verification_code)
+            await Reg.next()
     else:
         await message.answer(f"Неправильный формат.\n"
                              f"Пожалуйста, отправьте ваш номер или введите его в формате +998911234567")
@@ -121,28 +123,23 @@ async def nn(message: types.Message, state: FSMContext):
 async def verification(message: types.Message, state: FSMContext):
     user_entry = message.text
     time_now = datetime.now()
+    text = 'Уважаемый %s!\nВы успешно зарегистрировались!\nВаш язык: %s\nВаш номер: %s\n'
     date = time_now.strftime("%d.%m.%Y %H:%M")
     orders_no = 0
     async with state.proxy() as data:
         verification_code = data["verification_code"]
         result = re.match(user_entry, verification_code)
         if result:
-            await message.answer(f'Здравствуйте, {data["name"]}!\n'
-                                 f'Вы успешно зарегистрировались!\n'
-                                 f'Ваш язык: {data["language"]}\n'
-                                 f'Ваш номер: {data["number"]}\n'
-                                 f'Ваш id: {data["user_id"]}\n'
-                                 f'Ваш chat_id: {data["chat_id"]}\n'
-                                 f'Ваш username: {data["username"]}')
+            text = text % (data["name"], data["lang"], data["number"])
+            await message.answer(text)
 
-            await quick_commands.add_user(id=message.from_user.id, name=data["name"], lang_user=data["language"],
+            await quick_commands.add_user(id=message.from_user.id, name=data["name"], lang_user=data["lang"],
                                           number=data["number"], username=data["username"],
                                           referral=message.from_user.id)
             await message.answer(f'Приступим к оформлению?', reply_markup=main_menu)
             await state.finish()
         else:
-            await message.answer(f"Неверный код.\n"
-                                 f"Пожалуйста, введите его заново.")
+            await message.answer(f"Неверный код.\nПожалуйста, введите его заново.")
     # await state.finish()
 
 

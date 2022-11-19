@@ -6,7 +6,7 @@ from aiogram.dispatcher.middlewares import BaseMiddleware
 from utils.db_api import quick_commands
 from aiogram import Dispatcher
 from loader import dp
-from data.config import banned_users
+#from data.config import banned_users
 
 
 class BigBrother(BaseMiddleware):

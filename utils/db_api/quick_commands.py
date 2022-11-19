@@ -9,6 +9,7 @@ from utils.db_api.schemas.item import Item
 from utils.db_api.schemas.cart import Cart
 from utils.db_api.schemas.branches import Branch
 from utils.misc import get_address_from_coords
+from data.config import cashback
 
 
 # Добавить заказ
@@ -494,9 +495,21 @@ async def select_all_branches_list() -> List[Branch]:
         list.append(i.name)
     return list
 
+# Выбрать все активные заказы по id пользователя
+async def select_all_active_orders_by_id(user_id: int):
+    return await Order.query.where(Order.status == 1).where(Order.user_id == user_id).gino.all()
+
+# Выбрать все заказы по id пользователя
+async def select_all_orders_by_id(user_id: int):
+    return await Order.query.where(Order.user_id == user_id).gino.all()
+
 # Вернуть список активных заказов по названию филиала
-async def select_active_orders_by_branch(branch: str) -> List[Order]:
+async def select_active_orders_by_branch(branch: str):
     return await Order.query.where(Order.branch == branch).where(Order.status == 1).gino.all()
+
+# Вернуть список заказов по названию филиала
+async def select_orders_by_branch(branch: str):
+    return await Order.query.where(Order.branch == branch).gino.all()
 
 # Выбрать заказ по id
 async def select_order_by_id(id: int) -> Order:
@@ -606,6 +619,35 @@ async def select_all_couriers() -> List[User]:
 async def set_courier(order_id: int, courier_id: int):
     await Order.update.values(courier_id=courier_id).where(Order.id == order_id).gino.status()
 
+
+# Добавить 1 к количеству заказов пользователя
+async def add_order_to_user(user_id: int):
+    user = await select_user(user_id)
+    await User.update.values(orders=user.orders + 1).where(User.id == user_id).gino.status()
+
+# Удалить 1 из количества заказов пользователя
+async def remove_order_from_user(user_id: int):
+    user = await select_user(user_id)
+    await User.update.values(orders=user.orders - 1).where(User.id == user_id).gino.status()
+
+# Проверить есть ли пользователи с таким номером
+async def check_number(number: str) -> bool:
+    if await User.query.where(User.number == number).gino.first():
+        return True
+    else:
+        return False
+
+# Установить cashback пользователю
+async def set_cashback_to_user(user_id: int, order_id: int):
+    user = await select_user(user_id)
+    order = await select_order_by_id(order_id)
+    await User.update.values(cashback=user.cashback + order.cashback).where(User.id == user_id).gino.status()
+
+# Удалить cashback пользователю
+async def remove_cashback_from_user(user_id: int, order_id: int):
+    user = await select_user(user_id)
+    order = await select_order_by_id(order_id)
+    await User.update.values(cashback=user.cashback - order.cashback).where(User.id == user_id).gino.status()
 
 
 

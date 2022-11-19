@@ -27,7 +27,7 @@ lang = ""
 async def menu_cat(message: types.Message, state: FSMContext):
     global lang
     id = message.from_user.id
-    lang = await quick_commands.select_language(id=id)
+    lang = await quick_commands.select_language(id)
     back = ["Назад"]
     cart = ["Корзина", "Savat", "Cart"]
     order_make = ["Оформить заказ", "Buyurtma berish", "Make an order"]

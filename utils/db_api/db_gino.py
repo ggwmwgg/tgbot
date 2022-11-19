@@ -3,11 +3,15 @@ from typing import List
 from aiogram import Dispatcher
 from gino import Gino
 import sqlalchemy as sa
+import logging
 from sqlalchemy import Column, DateTime, Integer, String
 
 from data import config
 
 db = Gino()
+
+logging.basicConfig()
+logging.getLogger('gino.engine._SAEngine').setLevel(logging.ERROR)  # Turn off the annoying gino SQL echo message
 
 
 # Пример из https://github.com/aiogram/bot/blob/master/app/models/db.py

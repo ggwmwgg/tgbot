@@ -17,9 +17,8 @@ from keyboards.inline import no_comm
 # from utils.db_api.models import User
 from utils.misc import rate_limit, get_address_from_coords
 # from handlers.users.create_order import start_order
-lang = ""
+
 comments = "Добавьте комментарий к вашему заказу\nИли нажмите на соответствующую кнопку\n"
-koker = 0
 
 # Корзина тест
 @rate_limit(1, key="cart")
@@ -29,7 +28,6 @@ koker = 0
 async def show_cart(message: types.Message):
     global lang
     id = message.from_user.id
-
     lang = await quick_commands.select_language(id=id)
     back = "Назад"
     clear = "Очистить"
@@ -44,7 +42,6 @@ async def show_cart(message: types.Message):
         kok = f"<b>{cirt}:\n\n</b>"
         price_total = 0
         for item in await quick_commands.select_cart(id):
-
             name = await quick_commands.select_item_name(item.item_id, lang)
             price = await quick_commands.select_item_price(item.item_id)
             price_total += item.price
@@ -52,7 +49,6 @@ async def show_cart(message: types.Message):
         if user_cart.last == 1:
             price_total += user_cart.last_delivery
             kok += f"<b>{dll}</b> = <b><i>{user_cart.last_delivery} {pr}</i></b>\n\n"
-
         kok += "\n" + f"<b><i>{tot}: </i>" + f"{price_total} {pr}</b>\n\n" + info
         cats = await quick_commands.get_cart_list(id, lang)
         inline_kb1 = types.InlineKeyboardMarkup(row_width=1)
@@ -62,14 +58,10 @@ async def show_cart(message: types.Message):
         inline_kb1.row(types.InlineKeyboardButton(back, callback_data="back"),
                        types.InlineKeyboardButton(clear, callback_data="clear"))
         inline_kb1.row(types.InlineKeyboardButton(order, callback_data="order"))
-        # await message.answer("", reply_markup=ReplyKeyboardRemove())
         lil = await message.answer(text="Загрузка корзины", parse_mode="HTML", reply_markup=ReplyKeyboardRemove())
         await lil.delete()
-        global koker
         lilo = await message.answer(text=kok, parse_mode="HTML",reply_markup=inline_kb1)
         koker = lilo.message_id
-
-
         await Order.menu_cart.set()
     else:
         await message.answer("Ваша корзина пуста", reply_markup=main_menu)
@@ -102,9 +94,6 @@ async def inline_cart_callback_handler(query: types.CallbackQuery, state: FSMCon
         await quick_commands.delete_cart_by_itemid(id, item_id.id)
         deleted = f"<i>Товар {data} удален из корзины</i>\n\n"
         info = f"Нажмите на название товара для его удаления\n{clear} для очистки корзины\n{order} для оформления заказа\n\n"
-        # await query.message.edit_reply_markup(reply_markup=None)
-        # await query.message.edit_text()
-        # await dp.bot.edit_message_text(chat_id=query.from_user.id, message_id=query.message.message_id, text="Удалено", reply_markup=)
         kok = f"<b>{cirt}:\n\n</b>"
         price_total = 0
         for item in await quick_commands.select_cart(id):
@@ -115,11 +104,8 @@ async def inline_cart_callback_handler(query: types.CallbackQuery, state: FSMCon
         if user_cart.last == 1:
             price_total += user_cart.last_delivery
             kok += f"<b>{dll}</b> = <b><i>{user_cart.last_delivery} {pr}</i></b>\n\n"
-
-
         kok += "\n" + f"<b><i>{tot}: </i>" + f"{price_total} {pr}</b>\n\n" + info + deleted
         cats = await quick_commands.get_cart_list(id, lang)
-
         inline_kb1 = types.InlineKeyboardMarkup(row_width=1)
         for a in cats:
             b = a[:-2]
@@ -127,8 +113,6 @@ async def inline_cart_callback_handler(query: types.CallbackQuery, state: FSMCon
         inline_kb1.row(types.InlineKeyboardButton(back, callback_data="back"),
                        types.InlineKeyboardButton(clear, callback_data="clear"))
         inline_kb1.row(types.InlineKeyboardButton(order, callback_data="order"))
-        # await message.answer(text=kok, parse_mode="HTML", reply_markup=inline_kb1)
-
         await query.message.edit_text(text=kok, parse_mode="HTML")
         await query.message.edit_reply_markup(reply_markup=inline_kb1)
         await Order.menu_cart.set()
@@ -142,7 +126,6 @@ async def inline_cart_callback_handler(query: types.CallbackQuery, state: FSMCon
         await dp.bot.send_message(chat_id=id, text="Выберите категорию", reply_markup=cat_lan)
         await Order.menu.set()
     elif data == 'back':  # Назад
-
         text = "<b>" + back + "</b>"
         await query.message.edit_text(text=text, parse_mode="HTML")
         cats = await quick_commands.get_categories(lang)

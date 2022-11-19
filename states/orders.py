@@ -49,14 +49,19 @@ class Admin(StatesGroup):
     user_main_info_cashback = State()
     user_main_info_ban = State()
     user_main_info_rights = State()
-    orders = State()
-    order_by_ID = State()
-    order_by_ID_action = State()
-    order_add_item = State()
-    order_remove_item = State()
-    order_add_item_quantity = State()
-    order_remove_item_quantity = State()
-    order_set_courier = State()
+    orders = State() # Заказы
+    order_by_ID = State() # Заказ по ID
+    order_by_ID_action = State() # Действия с заказом
+    order_by_num = State() # Список заказов по номеру
+    order_a_by_num = State() # Список активных заказов по номеру
+    order_a_by_fil = State() # Список активных заказов по филиалу
+    order_by_fil = State() # Список заказов по филиалу
+    order_add_item = State() # Добавление товара
+    order_remove_item = State() # Удаление товара
+    order_add_item_quantity = State() # Добавление количества товара
+    order_remove_item_quantity = State() # Удаление позиции
+    order_set_courier = State() # Установка курьера
+    order_call = State() # Обработка коллбеков ID заказа для дальнейшего направления на order_by_ID_action
     cats = State()
     items = State()
 
