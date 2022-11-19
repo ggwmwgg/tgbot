@@ -9,3 +9,6 @@ Telegram Bot template for future development
 * Add branches management
 * Add multilanguage support
 * Add emojis
+* Add logginп
+* Add DJANGO admin panel
+* Add docker support

@@ -7,7 +7,9 @@ from .create_order import dp
 from .cart import dp
 from .menu import dp
 from .settings import dp
+from .orders import dp
 from .admin import dp
+from .courier import dp
 from .echo import dp
 
 __all__ = ["dp"]

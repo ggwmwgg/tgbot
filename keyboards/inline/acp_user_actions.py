@@ -15,28 +15,28 @@ keyboard_markup.add(types.InlineKeyboardButton(lang_en.name_eng, callback_data='
 
 lang_markup = types.InlineKeyboardMarkup(row_width=1)
 lang_markup.add(types.InlineKeyboardButton(lang_en.russian_eng, callback_data='ru'),
-                    types.InlineKeyboardButton(lang_en.uzbek_eng, callback_data='uz'),
-                    types.InlineKeyboardButton(lang_en.english_eng, callback_data='en'))
+                types.InlineKeyboardButton(lang_en.uzbek_eng, callback_data='uz'),
+                types.InlineKeyboardButton(lang_en.english_eng, callback_data='en'))
 
 
 ban_markup = types.InlineKeyboardMarkup(row_width=1)
 ban_markup.add(types.InlineKeyboardButton(lang_en.bann_eng, callback_data='ban'),
-                    types.InlineKeyboardButton(lang_en.unbann_eng, callback_data='unban'))
+               types.InlineKeyboardButton(lang_en.unbann_eng, callback_data='unban'))
 
 
 rights_markup = types.InlineKeyboardMarkup(row_width=1)
 rights_markup.add(types.InlineKeyboardButton(lang_en.admin_eng, callback_data='1'),
-                    types.InlineKeyboardButton(lang_en.operator_eng, callback_data='2'),
-                    types.InlineKeyboardButton(lang_en.courier_eng, callback_data='3'),
-                    types.InlineKeyboardButton(lang_en.user_eng, callback_data='0'))
+                  types.InlineKeyboardButton(lang_en.operator_eng, callback_data='2'),
+                  types.InlineKeyboardButton(lang_en.courier_eng, callback_data='3'),
+                  types.InlineKeyboardButton(lang_en.user_eng, callback_data='0'))
 
 orders_a = types.InlineKeyboardMarkup(row_width=1)
 orders_a.row(types.InlineKeyboardButton("Все", callback_data='all'),
-                    types.InlineKeyboardButton("<= Активные", callback_data='all_a'))
+             types.InlineKeyboardButton("<= Активные", callback_data='all_a'))
 orders_a.row(types.InlineKeyboardButton("Все по филиалу", callback_data='branch'),
-                    types.InlineKeyboardButton("<= Активные", callback_data='branch_a'))
+             types.InlineKeyboardButton("<= Активные", callback_data='branch_a'))
 orders_a.row(types.InlineKeyboardButton("Все по id/номеру пользователя", callback_data='num_id'),
-                    types.InlineKeyboardButton("<= Активные", callback_data='num_id_a'))
+             types.InlineKeyboardButton("<= Активные", callback_data='num_id_a'))
 orders_a.row(types.InlineKeyboardButton("Инфо по id заказа", callback_data='num_id_o'))
 orders_a.row(types.InlineKeyboardButton("Назад", callback_data='back'))
 
@@ -44,13 +44,13 @@ orders_a.row(types.InlineKeyboardButton("Назад", callback_data='back'))
 
 order_info = types.InlineKeyboardMarkup(row_width=1)
 order_info.row(types.InlineKeyboardButton("Подтвержден", callback_data='confirmed'),
-                    types.InlineKeyboardButton("Приготовление", callback_data='cooking'))
+               types.InlineKeyboardButton("Приготовление", callback_data='cooking'))
 order_info.row(types.InlineKeyboardButton("Доставка", callback_data='delivery'),
-                    types.InlineKeyboardButton("Доставлен", callback_data='delivered'))
+               types.InlineKeyboardButton("Доставлен", callback_data='delivered'))
 order_info.row(types.InlineKeyboardButton("Оплачен", callback_data='payed'),
-                    types.InlineKeyboardButton("Не оплачен", callback_data='not_payed'))
+               types.InlineKeyboardButton("Не оплачен", callback_data='not_payed'))
 order_info.row(types.InlineKeyboardButton("Добавить позицию", callback_data='add_pos'),
-                    types.InlineKeyboardButton("Удалить позицию", callback_data='remove_pos'))
+               types.InlineKeyboardButton("Удалить позицию", callback_data='remove_pos'))
 order_info.row(types.InlineKeyboardButton("Отменить заказ", callback_data='cancel'))
 order_info.row(types.InlineKeyboardButton("Назначить курьера", callback_data='courier_set'))
 order_info.row(types.InlineKeyboardButton("Назад", callback_data='back'))
@@ -82,3 +82,17 @@ order_by_id_quantity.add(types.InlineKeyboardButton("21", callback_data="21"),
                          types.InlineKeyboardButton("23", callback_data='23'),
                          types.InlineKeyboardButton("24", callback_data='24'),
                          types.InlineKeyboardButton("25", callback_data='25'))
+
+courier_ing = types.InlineKeyboardMarkup(row_width=1)
+courier_ing.add(types.InlineKeyboardButton("Забрал", callback_data="delivery"),
+                types.InlineKeyboardButton("Локация", callback_data="location"),
+                types.InlineKeyboardButton("Назад", callback_data='back'))
+
+courier_ed = types.InlineKeyboardMarkup(row_width=1)
+courier_ed.add(types.InlineKeyboardButton("Доставил", callback_data="delivered"),
+                types.InlineKeyboardButton("Локация", callback_data="location"),
+                types.InlineKeyboardButton("Назад", callback_data='back'))
+
+courier_yn = types.InlineKeyboardMarkup(row_width=2)
+courier_yn.row(types.InlineKeyboardButton("Да", callback_data="yes"),
+               types.InlineKeyboardButton("Нет", callback_data="no"))

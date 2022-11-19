@@ -39,6 +39,9 @@ class Settings(StatesGroup):
 
 class Admin(StatesGroup):
     a_main = State()
+    c_main = State()
+    c_process = State()
+    c_process_paid = State()
     users = State()
     user_info_by_number = State()
     user_info_by_id = State()
@@ -64,4 +67,8 @@ class Admin(StatesGroup):
     order_call = State() # Обработка коллбеков ID заказа для дальнейшего направления на order_by_ID_action
     cats = State()
     items = State()
+
+class Orders(StatesGroup):
+    o_main = State()
+    o_main_action = State()
 

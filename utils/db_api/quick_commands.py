@@ -650,4 +650,11 @@ async def remove_cashback_from_user(user_id: int, order_id: int):
     await User.update.values(cashback=user.cashback - order.cashback).where(User.id == user_id).gino.status()
 
 
+# Выбрать все заказы курьера
+async def select_all_orders_courier(courier_id: int):
+    return await Order.query.where(Order.courier_id == courier_id).gino.all()
+
+
+
+
 

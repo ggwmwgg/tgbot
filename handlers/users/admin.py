@@ -17,19 +17,61 @@ from utils.misc import rate_limit
 # Главное меню админки, с перенаправлением на клавиатуру для админа(ac_main)/оператора(oc_main)/курьера(cc_main)
 @rate_limit(1, key="admin")
 @dp.message_handler(Command("admin"), state=None)
-async def acp(message: types.Message):
+async def acp(message: types.Message, state: FSMContext):
     # Проверять есть ли юзер в существующих
     if await quick_commands.select_user(id=message.from_user.id):
+        rights = await quick_commands.check_rights(id=message.from_user.id)
         # Проверять есть ли юзер в админах
-        if await quick_commands.check_rights(id=message.from_user.id) == 0:
+        if rights == 0:
             await message.answer("You do not have permission to use this command", reply_markup=main_menu)
-        elif await quick_commands.check_rights(id=message.from_user.id) == 1:
+        elif rights == 1: # Если есть в админах
             await message.answer("You have successfully logged in", reply_markup=ac_main)
             await Admin.a_main.set()
-        elif await quick_commands.check_rights(id=message.from_user.id) == 2:
+        elif rights == 2: # Если есть в операторах
             await message.answer("You do not have permission to use this command", reply_markup=main_menu)
-        elif await quick_commands.check_rights(id=message.from_user.id) == 3:
-            await message.answer("You do not have permission to use this command", reply_markup=main_menu)
+        elif rights == 3: # Если есть в курьерах
+            user = await quick_commands.select_user(id=message.from_user.id)
+            orders = await quick_commands.select_all_orders_courier(user.id)
+
+            orders_list = types.InlineKeyboardMarkup(row_width=1, one_time_keyboard=True)
+            count = 0
+            count_all = 0
+            for order in orders:
+                status = ""
+                if order.status == 1:
+                    status = "В обработке"
+                    stat = f"№{order.id} | {status}"
+                    orders_list.add(types.InlineKeyboardButton(stat, callback_data=order.id))
+                    count += 1
+                    count_all += 1
+                elif order.status == 2:
+                    status = "Подтвержден"
+                    stat = f"№{order.id} | {status}"
+                    orders_list.add(types.InlineKeyboardButton(stat, callback_data=order.id))
+                    count += 1
+                    count_all += 1
+                elif order.status == 3:
+                    status = "Приготовление"
+                    stat = f"№{order.id} | {status}"
+                    orders_list.add(types.InlineKeyboardButton(stat, callback_data=order.id))
+                    count += 1
+                    count_all += 1
+                elif order.status == 4:
+                    status = "Доставка"
+                    stat = f"№{order.id} | {status}"
+                    orders_list.add(types.InlineKeyboardButton(stat, callback_data=order.id))
+                    count += 1
+                    count_all += 1
+                elif order.status == 5:
+                    count_all += 1
+                elif order.status == 6:
+                    count_all += 1
+            orders_list.add(types.InlineKeyboardButton("Обновить список", callback_data="refresh"))
+            orders_list.add(types.InlineKeyboardButton("Назад", callback_data="back"))
+            greeting = "<b>Здравствуйте, %s!</b>\n\nВам назначено <b>%s</b> заказов.\nВсего заказов: <b>%s</b>\n\n<i>Выберите заказ из списка ниже:</i>\n" % (user.name, count, count_all)
+            await message.answer(greeting, reply_markup=orders_list)
+            await Admin.c_main.set()
+
 
     else:
         # await message.answer(f'Здравствуйте, {message.from_user.full_name}!')

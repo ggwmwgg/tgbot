@@ -26,7 +26,6 @@ comments = "Добавьте комментарий к вашему заказу
 # @dp.message_handler(Text(equals=["Корзина"]), state=Order.menu_subcat)
 # @dp.message_handler(Text(equals=["Корзина"]), state=Order.menu_item)
 async def show_cart(message: types.Message):
-    global lang
     id = message.from_user.id
     lang = await quick_commands.select_language(id=id)
     back = "Назад"
@@ -74,7 +73,6 @@ async def show_cart(message: types.Message):
 
 @dp.callback_query_handler(state=Order.menu_cart)
 async def inline_cart_callback_handler(query: types.CallbackQuery, state: FSMContext):
-    global lang
     await query.answer()  # send answer to close the rounding circle
     id = query.from_user.id
     lang = await quick_commands.select_language(id)
