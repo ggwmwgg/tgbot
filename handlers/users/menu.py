@@ -57,7 +57,6 @@ async def menu_cat(message: types.Message, state: FSMContext):
             # Проверка по времени
             FROM_TIME = str(os.getenv("from_t"))
             TO_TIME = str(os.getenv("to_t"))
-
             NOW = datetime.datetime.now().strftime("%H")
             t_now = datetime.datetime.strptime(NOW, "%H")
             from_t = datetime.datetime.strptime(FROM_TIME, "%H")
