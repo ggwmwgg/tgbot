@@ -1,3 +1,6 @@
+import gettext
+import os
+
 from aiogram import types
 from aiogram.dispatcher import FSMContext
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
@@ -7,6 +10,7 @@ from loader import dp
 from states.orders import Order
 from utils.db_api import quick_commands
 from utils.misc import rate_limit
+import datetime
 
 
 # Меню (напитки, боксы итд) + возврат к выбору доставки или самовывоза
@@ -16,12 +20,15 @@ from utils.misc import rate_limit
 async def menu_cat(message: types.Message, state: FSMContext):
     id = message.from_user.id
     lang = await quick_commands.select_language(id)
+    lan = gettext.translation('tgbot', localedir='locales', languages=[lang])
+    lan.install()
+    _ = lan.gettext
     back = ["Назад 🔙", "Orqaga 🔙", "Back 🔙"]
     cart = ["Корзина 🛒", "Savat 🛒", "Cart 🛒"]
     order_make = ["Оформить заказ 🚚", "Buyurtma berish 🚚", "Make an order 🚚"]
     cats_list = await quick_commands.get_only_categories(lang)
     list_cat = await quick_commands.get_categories(lang)
-    if message.text in list_cat:  # Если выбрана категория, корзина, оформление заказа или кнопка назад
+    if message.text in list_cat:
         if message.text in back:
 
             main_menu = ReplyKeyboardMarkup(
@@ -47,8 +54,21 @@ async def menu_cat(message: types.Message, state: FSMContext):
             #await Order.cart.set()
             await show_cart(message)
         elif message.text == order_make[0] or message.text == order_make[1] or message.text == order_make[2]:
-            await start_order(message, state)
-            # await message.answer("Оформление заказа")
+            # Проверка по времени
+            FROM_TIME = str(os.getenv("from_t"))
+            TO_TIME = str(os.getenv("to_t"))
+            NOW = datetime.datetime.now().strftime("%H")
+            t_now = datetime.datetime.strptime(NOW, "%H")
+            from_t = datetime.datetime.strptime(FROM_TIME, "%H")
+            to_t = datetime.datetime.strptime(TO_TIME, "%H")
+
+            if from_t <= t_now <= to_t:
+                await start_order(message, state)
+            else:
+                text = "Заказы принимаются с <b>%s:00</b> до <b>%s:00</b>"
+                text = text % (FROM_TIME, TO_TIME)
+                dp.bot.send_message(message.from_user.id, text, parse_mode="HTML")
+            # await start_order(message, state)
             await Order.menu_confirm.set()
         elif message.text in cats_list:
             category = message.text
@@ -74,9 +94,11 @@ async def menu_cat(message: types.Message, state: FSMContext):
 @rate_limit(1, key="submenu")
 @dp.message_handler(state=Order.menu_subcat)
 async def menu_sub_cat(message: types.Message, state: FSMContext):
-    global lang
     id = message.from_user.id
     lang = await quick_commands.select_language(id)
+    lan = gettext.translation('tgbot', localedir='locales', languages=[lang])
+    lan.install()
+    _ = lan.gettext
     back = ["Назад 🔙", "Orqaga 🔙", "Back 🔙"]
     cart = ["Корзина 🛒", "Savat 🛒", "Cart 🛒"]
     order_make = ["Оформить заказ 🚚", "Buyurtma berish 🚚", "Make an order 🚚"]
@@ -164,9 +186,11 @@ async def menu_sub_cat(message: types.Message, state: FSMContext):
 @rate_limit(1, key="item_s_menu")
 @dp.message_handler(state=Order.menu_item)
 async def menu_item(message: types.Message, state: FSMContext):
-    global lang
     id = message.from_user.id
     lang = await quick_commands.select_language(id)
+    lan = gettext.translation('tgbot', localedir='locales', languages=[lang])
+    lan.install()
+    _ = lan.gettext
     back = ["Назад 🔙", "Orqaga 🔙", "Back 🔙"]
     cart = ["Корзина 🛒", "Savat 🛒", "Cart 🛒"]
 

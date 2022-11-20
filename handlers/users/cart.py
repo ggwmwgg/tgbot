@@ -1,3 +1,5 @@
+import gettext
+
 from aiogram import types
 from aiogram.dispatcher import FSMContext
 from aiogram.types import ReplyKeyboardRemove, ReplyKeyboardMarkup, KeyboardButton
@@ -13,7 +15,10 @@ comments = "Добавьте комментарий к вашему заказу
 @rate_limit(1, key="cart")
 async def show_cart(message: types.Message):
     id = message.from_user.id
-    lang = await quick_commands.select_language(id=id)
+    lang = await quick_commands.select_language(id)
+    lan = gettext.translation('tgbot', localedir='locales', languages=[lang])
+    lan.install()
+    _ = lan.gettext
     back = "Назад"
     clear = "Очистить"
     order = "Оформить заказ"
@@ -80,6 +85,9 @@ async def inline_cart_callback_handler(query: types.CallbackQuery, state: FSMCon
     await query.answer()  # send answer to close the rounding circle
     id = query.from_user.id
     lang = await quick_commands.select_language(id)
+    lan = gettext.translation('tgbot', localedir='locales', languages=[lang])
+    lan.install()
+    _ = lan.gettext
     data = query.data
     back = "Назад"
     clear = "Очистить"
@@ -179,6 +187,9 @@ async def inline_cart_callback_handler(query: types.CallbackQuery, state: FSMCon
 async def inline_cart_callback_handler(message:types.Message, state: FSMContext):
     id = message.from_user.id
     lang = await quick_commands.select_language(id)
+    lan = gettext.translation('tgbot', localedir='locales', languages=[lang])
+    lan.install()
+    _ = lan.gettext
     if message.text == "Назад":
         cats = await quick_commands.get_categories(lang)
         cat_lan = ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True, row_width=2).add(

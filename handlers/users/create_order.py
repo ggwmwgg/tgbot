@@ -1,3 +1,5 @@
+import gettext
+
 from aiogram import types
 from aiogram.dispatcher import FSMContext
 from aiogram.types import ReplyKeyboardRemove, ReplyKeyboardMarkup, KeyboardButton
@@ -19,8 +21,10 @@ from utils.misc import rate_limit, get_address_from_coords
 @rate_limit(1, key="cart")
 async def start_order(message: types.Message, state: FSMContext):
     id = message.from_user.id
-
     lang = await quick_commands.select_language(id)
+    lan = gettext.translation('tgbot', localedir='locales', languages=[lang])
+    lan.install()
+    _ = lan.gettext
 
     if await quick_commands.select_cart(id):
 
@@ -70,6 +74,9 @@ async def comment_order_query(query: types.CallbackQuery, state: FSMContext):
     global lang
     id = query.from_user.id
     lang = await quick_commands.select_language(id)
+    lan = gettext.translation('tgbot', localedir='locales', languages=[lang])
+    lan.install()
+    _ = lan.gettext
 
 
     if query.data == "no_comm":
@@ -101,6 +108,9 @@ async def comment_comm_msg(message: types.Message, state: FSMContext):
     global lang
     id = message.from_user.id
     lang = await quick_commands.select_language(id)
+    lan = gettext.translation('tgbot', localedir='locales', languages=[lang])
+    lan.install()
+    _ = lan.gettext
     await state.update_data(comment=message.text)
     async with state.proxy() as data:
         msg_id = data['msg_id']
@@ -126,6 +136,9 @@ async def payment_order_query(query: types.CallbackQuery, state: FSMContext):
     id = query.from_user.id
     user = await quick_commands.select_user(id)
     lang = await quick_commands.select_language(id)
+    lan = gettext.translation('tgbot', localedir='locales', languages=[lang])
+    lan.install()
+    _ = lan.gettext
     async with state.proxy() as data:
         msg_id = data['msg_id']
         type = ""
@@ -255,6 +268,10 @@ async def payment_order_query(query: types.CallbackQuery, state: FSMContext):
 async def menu_confirmed(query: types.CallbackQuery, state: FSMContext):
     id = query.from_user.id
     user = await quick_commands.select_user(id)
+    lang = await quick_commands.select_language(id)
+    lan = gettext.translation('tgbot', localedir='locales', languages=[lang])
+    lan.install()
+    _ = lan.gettext
     async with state.proxy() as data:
         # msg_id = data['msg_id']
         type = data['type']

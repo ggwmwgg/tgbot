@@ -1,3 +1,5 @@
+import gettext
+
 from aiogram import types
 from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters.builtin import Text, Command
@@ -19,6 +21,10 @@ from utils.misc import rate_limit
 @dp.message_handler(Text(equals=["Настройки 🛠", "Settings 🛠", "Sozlamalar 🛠"]), state=None)
 async def settings_select(message: types.Message, state: FSMContext):
     id = message.from_user.id
+    lang_u = await quick_commands.select_language(id)
+    lan = gettext.translation('tgbot', localedir='locales', languages=[lang_u])
+    lan.install()
+    _ = lan.gettext
     text = "<b>Настройки</b>\n\nИмя: %s\nЯзык: %s\nНомер: %s\nКоличество заказов: %s\nКешбек: %s\nДата регистрации: %s\n\n"
     if await quick_commands.select_user(id):
         user = await quick_commands.select_user(id)
@@ -75,6 +81,10 @@ async def settings_select(message: types.Message, state: FSMContext):
 @dp.callback_query_handler(state=Settings.settings)
 async def settings_main(query: types.CallbackQuery, state: FSMContext):
     user = await quick_commands.select_user(query.from_user.id)
+    lang_u = await quick_commands.select_language(query.from_user.id)
+    lan = gettext.translation('tgbot', localedir='locales', languages=[lang_u])
+    lan.install()
+    _ = lan.gettext
     await query.message.delete()
     if query.data == "name":
         text = "<b>Изменение имени</b>\n\nВаше предыдущее имя: %s\n\n<i>Введите новое Имя</i>"
@@ -147,6 +157,10 @@ async def settings_main(query: types.CallbackQuery, state: FSMContext):
 @rate_limit(2, key="nn")
 @dp.message_handler(state=Settings.number, content_types=["text", "contact"])
 async def num_nn(message: types.Message, state: FSMContext):
+    lang_u = await quick_commands.select_language(message.from_user.id)
+    lan = gettext.translation('tgbot', localedir='locales', languages=[lang_u])
+    lan.install()
+    _ = lan.gettext
     number = ""
     if message.text == "Back 🔙" or message.text == "Назад 🔙" or message.text == "Orqaga 🔙":
 
@@ -197,6 +211,10 @@ async def num_nn(message: types.Message, state: FSMContext):
 @dp.message_handler(state=Settings.number_code, content_types=["text"])
 async def verification_code_check(message: types.Message, state: FSMContext):
     id = message.from_user.id
+    lang_u = await quick_commands.select_language(id)
+    lan = gettext.translation('tgbot', localedir='locales', languages=[lang_u])
+    lan.install()
+    _ = lan.gettext
     user = await quick_commands.select_user(id)
     lang = ""
     user_entry = message.text
@@ -237,6 +255,10 @@ async def verification_code_check(message: types.Message, state: FSMContext):
 @dp.message_handler(state=Settings.name)
 async def name_confirm(message: types.Message, state: FSMContext):
     id = message.from_user.id
+    lang_u = await quick_commands.select_language(id)
+    lan = gettext.translation('tgbot', localedir='locales', languages=[lang_u])
+    lan.install()
+    _ = lan.gettext
     name = message.text
     await quick_commands.update_user_name(id=message.from_user.id, name=name)
     user = await quick_commands.select_user(id)
@@ -271,6 +293,10 @@ async def name_confirm(message: types.Message, state: FSMContext):
 async def lang_confirm(query: types.CallbackQuery, state: FSMContext):
     await query.message.edit_reply_markup(reply_markup=None)
     id = query.from_user.id
+    lang_u = await quick_commands.select_language(id)
+    lan = gettext.translation('tgbot', localedir='locales', languages=[lang_u])
+    lan.install()
+    _ = lan.gettext
     lang_c = query.data
     user = await quick_commands.select_user(id)
     lang = ""

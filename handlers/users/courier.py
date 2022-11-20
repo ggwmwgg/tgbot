@@ -1,3 +1,5 @@
+import gettext
+
 from aiogram import types
 from aiogram.dispatcher import FSMContext
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
@@ -12,6 +14,10 @@ from utils.misc import rate_limit, get_address_from_coords
 async def admin_courier(query: types.CallbackQuery, state: FSMContext):
     data = query.data
     id = query.from_user.id
+    lang = await quick_commands.select_language(id)
+    lan = gettext.translation('tgbot', localedir='locales', languages=[lang])
+    lan.install()
+    _ = lan.gettext
     if data == 'refresh':
         await query.message.delete()
         user = await quick_commands.select_user(id)
@@ -173,6 +179,10 @@ async def admin_courier(query: types.CallbackQuery, state: FSMContext):
 async def c_process(query: types.CallbackQuery, state: FSMContext):
     data = query.data
     id = query.from_user.id
+    lang = await quick_commands.select_language(id)
+    lan = gettext.translation('tgbot', localedir='locales', languages=[lang])
+    lan.install()
+    _ = lan.gettext
     async with state.proxy() as datap:
         order_id = datap['order_id']
     order = await quick_commands.select_order_by_id(order_id)
@@ -345,6 +355,10 @@ async def c_process(query: types.CallbackQuery, state: FSMContext):
 async def process_paid(query: types.CallbackQuery, state: FSMContext):
     data = query.data
     id = query.from_user.id
+    lang = await quick_commands.select_language(id)
+    lan = gettext.translation('tgbot', localedir='locales', languages=[lang])
+    lan.install()
+    _ = lan.gettext
     async with state.proxy() as data_p:
         order_id = data_p['order_id']
     order = await quick_commands.select_order_by_id(order_id)

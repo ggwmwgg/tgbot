@@ -93,6 +93,9 @@ async def order_view(query: types.CallbackQuery, state: FSMContext):
 async def orders_a(query: types.CallbackQuery, state: FSMContext):
     id = query.from_user.id
     lang = await quick_commands.select_language(id)
+    lan = gettext.translation('tgbot', localedir='locales', languages=[lang])
+    lan.install()
+    _ = lan.gettext
     if query.data == 'back':
         await query.message.delete()
         orders = await quick_commands.select_all_orders_by_id(id)

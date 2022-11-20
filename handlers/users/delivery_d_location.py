@@ -1,3 +1,5 @@
+import gettext
+
 from aiogram import types
 from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters.builtin import Text, Command
@@ -15,6 +17,10 @@ from utils.misc.calc_distance import choose_shortest_kek
 @dp.message_handler(Text(equals=["Начать заказ 🍽", "Start ordering 🍽", "Buyurtmani boshlash 🍽"]), state='*')
 async def start_ordering(message: types.Message):
     if await quick_commands.select_user(id=message.from_user.id):
+        lang = await quick_commands.select_language(message.from_user.id)
+        lan = gettext.translation('tgbot', localedir='locales', languages=[lang])
+        lan.install()
+        _ = lan.gettext
         if await quick_commands.check_last_order_data(message.from_user.id):
             user = await quick_commands.select_user(id=message.from_user.id)
             latitude = user.latitude
@@ -103,6 +109,9 @@ async def start_ordering(message: types.Message):
 async def ask_delivery(message: types.Message):
     id = message.from_user.id
     lang = await quick_commands.select_language(id)
+    lan = gettext.translation('tgbot', localedir='locales', languages=[lang])
+    lan.install()
+    _ = lan.gettext
     old = ["Использовать предыдущие данные 📝", "Use previous data 📝", "Oldingi ma'lumotlardan foydalaning 📝"]
     new = ["Использовать новые данные 📄", "Use new data 📄", "Yangi ma'lumotlardan foydalaning 📄"]
     if message.text in old:
@@ -156,7 +165,11 @@ async def ask_delivery(message: types.Message):
 @rate_limit(1, key="delivery")
 @dp.message_handler(Text(equals=["Доставка 🚕", "Delivery 🚕", "Yetkazib berish 🚕"]), state=Order.asklocation)
 async def ask_delivery(message: types.Message):
-
+    id = message.from_user.id
+    lang = await quick_commands.select_language(id)
+    lan = gettext.translation('tgbot', localedir='locales', languages=[lang])
+    lan.install()
+    _ = lan.gettext
     location = ReplyKeyboardMarkup(
         keyboard=[
             [
@@ -177,6 +190,11 @@ async def ask_delivery(message: types.Message):
 # Назад в отправке локации
 @dp.message_handler(Text(equals=["Назад 🔙", "Orqaga 🔙", "Back 🔙"]), state=Order.location_delivery)
 async def ask_delivery(message: types.Message):
+    id = message.from_user.id
+    lang = await quick_commands.select_language(id)
+    lan = gettext.translation('tgbot', localedir='locales', languages=[lang])
+    lan.install()
+    _ = lan.gettext
 
     d_or_d = ReplyKeyboardMarkup(
         keyboard=[
@@ -202,6 +220,11 @@ async def ask_delivery(message: types.Message):
 @rate_limit(1, key="delivery")
 @dp.message_handler(content_types=types.ContentType.LOCATION, state=Order.location_delivery)
 async def delivery_set(message: types.Message, state: FSMContext):
+    id = message.from_user.id
+    lang = await quick_commands.select_language(id)
+    lan = gettext.translation('tgbot', localedir='locales', languages=[lang])
+    lan.install()
+    _ = lan.gettext
     location = message.location
     await state.update_data(location=location)  # Запись локации для доставки в бд
     # print(location)
@@ -235,6 +258,11 @@ async def delivery_set(message: types.Message, state: FSMContext):
 # Назад в подтверждении адреса доставки
 @dp.message_handler(Text(equals=["Назад 🔙", "Orqaga 🔙", "Back 🔙"]), state=Order.location_delivery_another)
 async def ask_delivery(message: types.Message):
+    id = message.from_user.id
+    lang = await quick_commands.select_language(id)
+    lan = gettext.translation('tgbot', localedir='locales', languages=[lang])
+    lan.install()
+    _ = lan.gettext
     d_or_d = ReplyKeyboardMarkup(
         keyboard=[
             [
@@ -257,7 +285,11 @@ async def ask_delivery(message: types.Message):
 @rate_limit(1, key="delivery")
 @dp.message_handler(Text(equals=["Отправить заново 📍", "Send again 📍", "Yana yuboring 📍"]), state=Order.location_delivery_another)
 async def confirmed_delivery(message: types.Message):
-
+    id = message.from_user.id
+    lang = await quick_commands.select_language(id)
+    lan = gettext.translation('tgbot', localedir='locales', languages=[lang])
+    lan.install()
+    _ = lan.gettext
     location = ReplyKeyboardMarkup(
         keyboard=[
             [
@@ -282,6 +314,9 @@ async def confirmed_delivery(message: types.Message):
 async def confirmed_delivery(message: types.Message, state: FSMContext):
     id = message.from_user.id
     lang = await quick_commands.select_language(id)
+    lan = gettext.translation('tgbot', localedir='locales', languages=[lang])
+    lan.install()
+    _ = lan.gettext
     cats = await quick_commands.get_categories(lang)
     async with state.proxy() as data:
         location_delivery = data["location"]
@@ -320,7 +355,11 @@ async def confirmed_delivery(message: types.Message, state: FSMContext):
 @rate_limit(2, key="location")
 @dp.message_handler(Text(equals=["Самовывоз 🏃", "Pickup 🏃", "Termoq 🏃"]), state=Order.asklocation)
 async def ask_drive_thru(message: types.Message):
-
+    id = message.from_user.id
+    lang = await quick_commands.select_language(id)
+    lan = gettext.translation('tgbot', localedir='locales', languages=[lang])
+    lan.install()
+    _ = lan.gettext
     location = ReplyKeyboardMarkup(
         keyboard=[
             [
@@ -341,6 +380,11 @@ async def ask_drive_thru(message: types.Message):
 # Назад в отправке локации
 @dp.message_handler(Text(equals=["Назад 🔙", "Orqaga 🔙", "Back 🔙"]), state=Order.location_drive)
 async def ask_delivery(message: types.Message):
+    id = message.from_user.id
+    lang = await quick_commands.select_language(id)
+    lan = gettext.translation('tgbot', localedir='locales', languages=[lang])
+    lan.install()
+    _ = lan.gettext
     d_or_d = ReplyKeyboardMarkup(
         keyboard=[
             [
@@ -363,6 +407,11 @@ async def ask_delivery(message: types.Message):
 @rate_limit(2, key="drive")
 @dp.message_handler(content_types=types.ContentType.LOCATION, state=Order.location_drive)
 async def ask_again_drive(message: types.Message, state: FSMContext):
+    id = message.from_user.id
+    lang = await quick_commands.select_language(id)
+    lan = gettext.translation('tgbot', localedir='locales', languages=[lang])
+    lan.install()
+    _ = lan.gettext
     location_drive = message.location
     closest_shops = await choose_shortest_kek(location_drive)
     await state.update_data(location=location_drive)  # Запись локации для доставки в бд
@@ -401,6 +450,11 @@ async def ask_again_drive(message: types.Message, state: FSMContext):
 # Назад в подтверждении адреса доставки
 @dp.message_handler(Text(equals=["Назад 🔙", "Orqaga 🔙", "Back 🔙"]), state=Order.location_drive_another)
 async def ask_delivery(message: types.Message):
+    id = message.from_user.id
+    lang = await quick_commands.select_language(id)
+    lan = gettext.translation('tgbot', localedir='locales', languages=[lang])
+    lan.install()
+    _ = lan.gettext
 
     d_or_d = ReplyKeyboardMarkup(
         keyboard=[
@@ -424,6 +478,11 @@ async def ask_delivery(message: types.Message):
 @rate_limit(2, key="drive")
 @dp.message_handler(Text(equals=["Сохранить 📝", "Save 📝", "Saqlash 📝"]), state=Order.location_drive_another)
 async def confirm_drive(message: types.Message, state: FSMContext):
+    id = message.from_user.id
+    lang = await quick_commands.select_language(id)
+    lan = gettext.translation('tgbot', localedir='locales', languages=[lang])
+    lan.install()
+    _ = lan.gettext
     async with state.proxy() as data:
         await message.answer(f'Вы выбрали филиал: {data["branch"]}')
         id = message.from_user.id
@@ -444,6 +503,11 @@ async def confirm_drive(message: types.Message, state: FSMContext):
 @rate_limit(2, key="drive_a")
 @dp.message_handler(Text(equals=["Выбрать другой 🏠", "Choose another 🏠", "Boshqasini tanlang 🏠"]), state=Order.location_drive_another)
 async def change_drive(message: types.Message):
+    id = message.from_user.id
+    lang = await quick_commands.select_language(id)
+    lan = gettext.translation('tgbot', localedir='locales', languages=[lang])
+    lan.install()
+    _ = lan.gettext
     branches_list = []
     for branch in await quick_commands.select_all_branches_list():
         branches_list.append([branch])
@@ -456,6 +520,11 @@ async def change_drive(message: types.Message):
 @rate_limit(2, key="drive_a")
 @dp.message_handler(state=Order.location_drive_another)
 async def confirm_drive_again(message: types.Message, state: FSMContext):
+    id = message.from_user.id
+    lang = await quick_commands.select_language(id)
+    lan = gettext.translation('tgbot', localedir='locales', languages=[lang])
+    lan.install()
+    _ = lan.gettext
     list = await quick_commands.select_all_branches_list()
     if message.text in list:
 
@@ -488,6 +557,11 @@ async def confirm_drive_again(message: types.Message, state: FSMContext):
 @rate_limit(1, key="delivery")
 @dp.message_handler(Text(equals=["Назад 🔙", "Orqaga 🔙", "Back 🔙"]), state=Order.asklocation)
 async def back_delivery(message: types.Message, state: FSMContext):
+    id = message.from_user.id
+    lang = await quick_commands.select_language(id)
+    lan = gettext.translation('tgbot', localedir='locales', languages=[lang])
+    lan.install()
+    _ = lan.gettext
     main_menu = ReplyKeyboardMarkup(
         keyboard=[
             [

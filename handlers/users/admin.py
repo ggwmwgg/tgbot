@@ -1,3 +1,4 @@
+import gettext
 import re
 from aiogram import types
 from aiogram.dispatcher import FSMContext
@@ -20,6 +21,11 @@ from utils.misc import rate_limit
 async def acp(message: types.Message, state: FSMContext):
     # Проверять есть ли юзер в существующих
     if await quick_commands.select_user(id=message.from_user.id):
+        id = message.from_user.id
+        lang = await quick_commands.select_language(id)
+        lan = gettext.translation('tgbot', localedir='locales', languages=[lang])
+        lan.install()
+        _ = lan.gettext
         rights = await quick_commands.check_rights(id=message.from_user.id)
         # Проверять есть ли юзер в админах
         if rights == 0:
@@ -160,7 +166,11 @@ async def acp(message: types.Message, state: FSMContext):
 @rate_limit(1, key="admin_main")
 @dp.message_handler(Text(equals=["Пользователи 🧑‍🤝‍🧑", "Users 🧑‍🤝‍🧑", "Foydalanuvchilar 🧑‍🤝‍🧑"]), state=Admin.a_main)
 async def a_users_main_m(message: types.Message):
-
+    id = message.from_user.id
+    lang = await quick_commands.select_language(id)
+    lan = gettext.translation('tgbot', localedir='locales', languages=[lang])
+    lan.install()
+    _ = lan.gettext
     ac_users = ReplyKeyboardMarkup(
         keyboard=[
             [
@@ -184,6 +194,11 @@ async def a_users_main_m(message: types.Message):
 @rate_limit(1, key="admin_main")
 @dp.message_handler(Text(equals=["Заказы 🛒", "Orders 🛒", "Buyurtmalar 🛒"]), state=Admin.a_main)
 async def a_orders_main_m(message: types.Message, state: FSMContext):
+    id = message.from_user.id
+    lang = await quick_commands.select_language(id)
+    lan = gettext.translation('tgbot', localedir='locales', languages=[lang])
+    lan.install()
+    _ = lan.gettext
     orders = await quick_commands.select_all_orders()
     count_all = 0  # Счетчик всех заказов
     count_not_all = 0  # Счетчик заказов
@@ -227,7 +242,11 @@ async def a_orders_main_m(message: types.Message, state: FSMContext):
 @rate_limit(1, key="admin_main")
 @dp.message_handler(Text(equals=["Назад 🔙", "Orqaga 🔙", "Back 🔙"]), state=Admin.a_main)
 async def a_users_main_m_back(message: types.Message, state: FSMContext):
-
+    id = message.from_user.id
+    lang = await quick_commands.select_language(id)
+    lan = gettext.translation('tgbot', localedir='locales', languages=[lang])
+    lan.install()
+    _ = lan.gettext
     main_menu = ReplyKeyboardMarkup(
         keyboard=[
             [
@@ -254,6 +273,11 @@ async def a_users_main_m_back(message: types.Message, state: FSMContext):
 @dp.message_handler(Text(equals=["Назад 🔙", "Orqaga 🔙", "Back 🔙"]), state=Admin.users)
 @dp.message_handler(Text(equals=["Назад 🔙", "Orqaga 🔙", "Back 🔙"]), state=Admin.orders)
 async def a_users_back(message: types.Message):
+    id = message.from_user.id
+    lang = await quick_commands.select_language(id)
+    lan = gettext.translation('tgbot', localedir='locales', languages=[lang])
+    lan.install()
+    _ = lan.gettext
 
     ac_main = ReplyKeyboardMarkup(
         keyboard=[
@@ -280,7 +304,11 @@ async def a_users_back(message: types.Message):
 @rate_limit(1, key="admin_main_id")
 @dp.message_handler(Text(equals=["Инфо по номеру 📱", "Info by number 📱", "Raqam bo'yicha ma'lumot 📱"]), state=Admin.users)
 async def a_users_info_num_kok(message: types.Message):
-
+    id = message.from_user.id
+    lang = await quick_commands.select_language(id)
+    lan = gettext.translation('tgbot', localedir='locales', languages=[lang])
+    lan.install()
+    _ = lan.gettext
     ac_back = ReplyKeyboardMarkup(
         keyboard=[
             [
@@ -299,7 +327,11 @@ async def a_users_info_num_kok(message: types.Message):
 @rate_limit(1, key="admin_main_id")
 @dp.message_handler(Text(equals=["Инфо по ID 🆔", "Info by ID 🆔", "ID bo'yicha ma'lumot 🆔"]), state=Admin.users)
 async def a_users_info_id(message: types.Message):
-
+    id = message.from_user.id
+    lang = await quick_commands.select_language(id)
+    lan = gettext.translation('tgbot', localedir='locales', languages=[lang])
+    lan.install()
+    _ = lan.gettext
     ac_back = ReplyKeyboardMarkup(
         keyboard=[
             [
@@ -319,6 +351,11 @@ async def a_users_info_id(message: types.Message):
 @dp.message_handler(state=Admin.user_info_by_number, content_types=["text"])
 async def a_users_n(message: types.Message, state: FSMContext):
     number = message.text
+    id = message.from_user.id
+    lang = await quick_commands.select_language(id)
+    lan = gettext.translation('tgbot', localedir='locales', languages=[lang])
+    lan.install()
+    _ = lan.gettext
     pattern = '(^\+998[8-9])\d{8}$'
     result = re.match(pattern, number)
     back_b = ["Назад 🔙", "Orqaga 🔙", "Back 🔙"]
@@ -406,6 +443,11 @@ async def a_users_n(message: types.Message, state: FSMContext):
 @rate_limit(1, key="admin_main_id")
 @dp.message_handler(state=Admin.user_info_by_id, content_types=["text"])
 async def a_users(message: types.Message, state: FSMContext):
+    id = message.from_user.id
+    lang = await quick_commands.select_language(id)
+    lan = gettext.translation('tgbot', localedir='locales', languages=[lang])
+    lan.install()
+    _ = lan.gettext
     back_b = ["Назад 🔙", "Orqaga 🔙", "Back 🔙"]
     if message.text in back_b:
 
@@ -481,7 +523,11 @@ async def a_users(message: types.Message, state: FSMContext):
                            state=Admin.user_main_info)
 async def inline_kb_answer_callback_handler(query: types.CallbackQuery, state: FSMContext):
     await query.answer()  # send answer to close the rounding circle
-
+    id = query.from_user.id
+    lang = await quick_commands.select_language(id)
+    lan = gettext.translation('tgbot', localedir='locales', languages=[lang])
+    lan.install()
+    _ = lan.gettext
     answer_data = query.data
     async with state.proxy() as data:
         user_id = int(data["user_id"])
@@ -573,6 +619,11 @@ async def inline_kb_answer_callback_handler(query: types.CallbackQuery, state: F
 @dp.message_handler(state=Admin.user_main_info_name)
 async def name_ac_change(message: types.Message, state: FSMContext):
     name = message.text
+    id = message.from_user.id
+    lang = await quick_commands.select_language(id)
+    lan = gettext.translation('tgbot', localedir='locales', languages=[lang])
+    lan.install()
+    _ = lan.gettext
     async with state.proxy() as data:
         user_id = int(data["user_id"])
         await quick_commands.update_user_name(user_id, name)
@@ -607,7 +658,11 @@ async def name_ac_change(message: types.Message, state: FSMContext):
 @dp.callback_query_handler(lambda cb: cb.data in ["ru", "uz", "en"], state=Admin.user_main_info_lang)
 async def inline_kb_answer_lang_callback_handler(query: types.CallbackQuery, state: FSMContext):
     await query.answer()  # send answer to close the rounding circle
-
+    id = query.from_user.id
+    lang = await quick_commands.select_language(id)
+    lan = gettext.translation('tgbot', localedir='locales', languages=[lang])
+    lan.install()
+    _ = lan.gettext
     answer_data = query.data
     # logging.info(f"answer_data={answer_data}")
     # here we can work with query.data
@@ -657,6 +712,11 @@ async def inline_kb_answer_lang_callback_handler(query: types.CallbackQuery, sta
 @dp.message_handler(state=Admin.user_main_info_number)
 async def acp_nn(message: types.Message, state: FSMContext):
     number = message.text
+    id = message.from_user.id
+    lang = await quick_commands.select_language(id)
+    lan = gettext.translation('tgbot', localedir='locales', languages=[lang])
+    lan.install()
+    _ = lan.gettext
 
     pattern = '(^\+998[8-9])\d{8}$'
     result = re.match(pattern, number)
@@ -698,6 +758,11 @@ async def acp_nn(message: types.Message, state: FSMContext):
 @rate_limit(2, key="nn")
 @dp.message_handler(state=Admin.user_main_info_cashback)
 async def acp_cashback(message: types.Message, state: FSMContext):
+    id = message.from_user.id
+    lang = await quick_commands.select_language(id)
+    lan = gettext.translation('tgbot', localedir='locales', languages=[lang])
+    lan.install()
+    _ = lan.gettext
     if message.text.isdigit():
         number = int(message.text)
         async with state.proxy() as data:
@@ -735,6 +800,11 @@ async def acp_cashback(message: types.Message, state: FSMContext):
 @dp.callback_query_handler(lambda cb: cb.data in ["ban", "unban"], state=Admin.user_main_info_ban)
 async def inline_kb_answer_lang_callback_handler(query: types.CallbackQuery, state: FSMContext):
     await query.answer()  # send answer to close the rounding circle
+    id = query.from_user.id
+    lang = await quick_commands.select_language(id)
+    lan = gettext.translation('tgbot', localedir='locales', languages=[lang])
+    lan.install()
+    _ = lan.gettext
 
     answer_data = query.data
     # logging.info(f"answer_data={answer_data}")
@@ -782,7 +852,11 @@ async def inline_kb_answer_lang_callback_handler(query: types.CallbackQuery, sta
 @dp.callback_query_handler(lambda cb: cb.data in ["0", "1", "2", "3"], state=Admin.user_main_info_rights)
 async def inline_kb_answer_lang_callback_handler(query: types.CallbackQuery, state: FSMContext):
     await query.answer()  # send answer to close the rounding circle
-
+    id = query.from_user.id
+    lang = await quick_commands.select_language(id)
+    lan = gettext.translation('tgbot', localedir='locales', languages=[lang])
+    lan.install()
+    _ = lan.gettext
     answer_data = query.data
     # logging.info(f"answer_data={answer_data}")
     # here we can work with query.data
@@ -836,7 +910,11 @@ async def inline_kb_answer_lang_callback_handler(query: types.CallbackQuery, sta
     state=Admin.orders)
 async def inline_kb_answer_callback_handler(query: types.CallbackQuery, state: FSMContext):
     await query.answer()  # send answer to close the rounding circle
-
+    id = query.from_user.id
+    lang = await quick_commands.select_language(id)
+    lan = gettext.translation('tgbot', localedir='locales', languages=[lang])
+    lan.install()
+    _ = lan.gettext
     answer_data = query.data
 
     async with state.proxy() as data:
@@ -946,6 +1024,11 @@ async def inline_kb_answer_callback_handler(query: types.CallbackQuery, state: F
 # Вывод списка активных заказов по филиалу
 @dp.callback_query_handler(state=Admin.order_a_by_fil)
 async def process_a_orders_by_branch(query: types.CallbackQuery, state: FSMContext):
+    id = query.from_user.id
+    lang = await quick_commands.select_language(id)
+    lan = gettext.translation('tgbot', localedir='locales', languages=[lang])
+    lan.install()
+    _ = lan.gettext
     if query.data == 'back':
         orders = await quick_commands.select_all_orders()
         count_all = 0  # Счетчик всех заказов
@@ -1018,6 +1101,11 @@ async def process_a_orders_by_branch(query: types.CallbackQuery, state: FSMConte
 # Вывод списка заказов по выбранному филиалу
 @dp.callback_query_handler(state=Admin.order_by_fil)
 async def process_orders_by_branch(query: types.CallbackQuery, state: FSMContext):
+    id = query.from_user.id
+    lang = await quick_commands.select_language(id)
+    lan = gettext.translation('tgbot', localedir='locales', languages=[lang])
+    lan.install()
+    _ = lan.gettext
     if query.data == 'back':
         orders = await quick_commands.select_all_orders()
         count_all = 0  # Счетчик всех заказов
@@ -1091,6 +1179,9 @@ async def process_orders_by_branch(query: types.CallbackQuery, state: FSMContext
 async def process_order_by_user_number(message: types.Message, state: FSMContext):
     user_id = message.from_user.id
     lang = await quick_commands.select_language(user_id)
+    lan = gettext.translation('tgbot', localedir='locales', languages=[lang])
+    lan.install()
+    _ = lan.gettext
     id = message.text
     text = ""
     pattern = '(^\+998[8-9])\d{8}$'
@@ -1156,6 +1247,9 @@ async def process_order_by_user_number(message: types.Message, state: FSMContext
 async def process_order_by_user_number(message: types.Message, state: FSMContext):
     user_id = message.from_user.id
     lang = await quick_commands.select_language(user_id)
+    lan = gettext.translation('tgbot', localedir='locales', languages=[lang])
+    lan.install()
+    _ = lan.gettext
     id = message.text
     text = ""
     pattern = '(^\+998[8-9])\d{8}$'
@@ -1222,6 +1316,9 @@ async def process_order_by_user_number(message: types.Message, state: FSMContext
 async def process_order_by_ID(message: types.Message, state: FSMContext):
     user_id = message.from_user.id
     lang = await quick_commands.select_language(user_id)
+    lan = gettext.translation('tgbot', localedir='locales', languages=[lang])
+    lan.install()
+    _ = lan.gettext
     id = message.text
     try:
         id = int(id)
@@ -1273,6 +1370,9 @@ async def process_order_by_ID_action(query: types.CallbackQuery, state: FSMConte
     user_id = query.from_user.id
     status = ""
     lang = await quick_commands.select_language(user_id)
+    lan = gettext.translation('tgbot', localedir='locales', languages=[lang])
+    lan.install()
+    _ = lan.gettext
 
     async with state.proxy() as data:
         order_id = data["order_id"]
@@ -1749,6 +1849,9 @@ async def process_order_add_action(query: types.CallbackQuery, state: FSMContext
     user_id = query.from_user.id
     status = ""
     lang = await quick_commands.select_language(user_id)
+    lan = gettext.translation('tgbot', localedir='locales', languages=[lang])
+    lan.install()
+    _ = lan.gettext
     items_list = await quick_commands.select_all_items()
     await state.update_data(item_id=query.data)
     item_id = int(query.data)
@@ -1823,6 +1926,9 @@ async def process_order_remove_action(query: types.CallbackQuery, state: FSMCont
     user_id = query.from_user.id
     status = ""
     lang = await quick_commands.select_language(user_id)
+    lan = gettext.translation('tgbot', localedir='locales', languages=[lang])
+    lan.install()
+    _ = lan.gettext
     await state.update_data(item_id=query.data)
     item_id = int(query.data)
     async with state.proxy() as data:
@@ -1891,6 +1997,9 @@ async def process_order_remove_action(query: types.CallbackQuery, state: FSMCont
 async def process_order_item_action(query: types.CallbackQuery, state: FSMContext):
     user_id = query.from_user.id
     lang = await quick_commands.select_language(user_id)
+    lan = gettext.translation('tgbot', localedir='locales', languages=[lang])
+    lan.install()
+    _ = lan.gettext
 
     quantity = int(query.data)
     async with state.proxy() as data:
@@ -1966,6 +2075,9 @@ async def process_order_item_action(query: types.CallbackQuery, state: FSMContex
 async def process_order_itemr_action(query: types.CallbackQuery, state: FSMContext):
     user_id = query.from_user.id
     lang = await quick_commands.select_language(user_id)
+    lan = gettext.translation('tgbot', localedir='locales', languages=[lang])
+    lan.install()
+    _ = lan.gettext
 
     quantity = int(query.data)
     async with state.proxy() as data:
@@ -2042,6 +2154,10 @@ async def process_order_itemr_action(query: types.CallbackQuery, state: FSMConte
 @dp.callback_query_handler(state=Admin.order_set_courier)
 async def process_order_add_action(query: types.CallbackQuery, state: FSMContext):
     user_id = query.from_user.id
+    lang = await quick_commands.select_language(user_id)
+    lan = gettext.translation('tgbot', localedir='locales', languages=[lang])
+    lan.install()
+    _ = lan.gettext
     async with state.proxy() as data:
         order_id = data["order_id"]
         order_id = int(order_id)
@@ -2138,6 +2254,11 @@ async def process_order_add_action(query: types.CallbackQuery, state: FSMContext
 # Обработка функций по id заказа
 @dp.callback_query_handler(state=Admin.order_call)
 async def process_call_orders(query: types.CallbackQuery, state: FSMContext):
+    id = query.from_user.id
+    lang = await quick_commands.select_language(id)
+    lan = gettext.translation('tgbot', localedir='locales', languages=[lang])
+    lan.install()
+    _ = lan.gettext
     if query.data == 'back':
         orders = await quick_commands.select_all_orders()
         count_all = 0  # Счетчик всех заказов

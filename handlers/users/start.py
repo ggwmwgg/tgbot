@@ -1,3 +1,5 @@
+import gettext
+
 from aiogram import types
 from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters.builtin import CommandStart, Text
@@ -18,6 +20,10 @@ from utils.db_api import quick_commands
 @dp.message_handler(CommandStart(), state='*') #  state=None
 async def bot_start(message: types.Message):
     if await quick_commands.select_user(id=message.from_user.id):
+        lang = await quick_commands.select_language(message.from_user.id)
+        lan = gettext.translation('tgbot', localedir='locales', languages=[lang])
+        lan.install()
+        _ = lan.gettext
         main_menu = ReplyKeyboardMarkup(
             keyboard=[
                 [
@@ -98,6 +104,11 @@ async def language(message: types.Message, state: FSMContext):
 @dp.message_handler(state=Reg.name)
 async def name(message: types.Message, state: FSMContext):
     name = message.text
+    async with state.proxy() as data:
+        lang = data['lang']
+    lan = gettext.translation('tgbot', localedir='locales', languages=[lang])
+    lan.install()
+    _ = lan.gettext
     await state.update_data(name=name)
     nmbr = ReplyKeyboardMarkup(
         keyboard=[
@@ -114,7 +125,14 @@ async def name(message: types.Message, state: FSMContext):
 @rate_limit(2, key="nn")
 @dp.message_handler(state=Reg.nn, content_types=["text", "contact"])
 async def nn(message: types.Message, state: FSMContext):
+    async with state.proxy() as data:
+        lang = data['lang']
+    lan = gettext.translation('tgbot', localedir='locales', languages=[lang])
+    lan.install()
+    _ = lan.gettext
+
     number = ""
+
     if message.text:
         number = message.text
     elif message.contact.phone_number:
@@ -147,6 +165,11 @@ async def nn(message: types.Message, state: FSMContext):
 @rate_limit(2, key="code")
 @dp.message_handler(state=Reg.code)
 async def verification(message: types.Message, state: FSMContext):
+    async with state.proxy() as data:
+        lang = data['lang']
+    lan = gettext.translation('tgbot', localedir='locales', languages=[lang])
+    lan.install()
+    _ = lan.gettext
     user_entry = message.text
     time_now = datetime.now()
     text = 'Уважаемый %s!\nВы успешно зарегистрировались!\nВаш язык: %s\nВаш номер: %s\n'

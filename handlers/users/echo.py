@@ -1,34 +1,62 @@
+import gettext
 
 from aiogram import types
 from aiogram.dispatcher import FSMContext
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
 
 from loader import dp
-
+from utils.db_api import quick_commands
 
 
 @dp.message_handler()
 async def bot_echo(message: types.Message, state: FSMContext):
-    text = "Неизвестная команда\nНажмите /start для перезапуска"
+    if await quick_commands.select_user(id=message.from_user.id):
+        lang = await quick_commands.select_language(message.from_user.id)
+        lan = gettext.translation('tgbot', localedir='locales', languages=[lang])
+        lan.install()
+        _ = lan.gettext
+        text = "Неизвестная команда\nНажмите /start для перезапуска"
 
-    main_menu = ReplyKeyboardMarkup(
-        keyboard=[
-            [
-                KeyboardButton(text="Начать заказ 🍽"),
+        main_menu = ReplyKeyboardMarkup(
+            keyboard=[
+                [
+                    KeyboardButton(text="Начать заказ 🍽"),
+                ],
+                [
+                    KeyboardButton(text="Оставить отзыв 📝"),
+                    KeyboardButton(text="Мои заказы 🛒")
+                ],
+                [
+                    KeyboardButton(text="Контакты 📲"),
+                    KeyboardButton(text="Настройки 🛠")
+                ]
             ],
-            [
-                KeyboardButton(text="Оставить отзыв 📝"),
-                KeyboardButton(text="Мои заказы 🛒")
-            ],
-            [
-                KeyboardButton(text="Контакты 📲"),
-                KeyboardButton(text="Настройки 🛠")
-            ]
-        ],
-        resize_keyboard=True
-    )
+            resize_keyboard=True
+        )
 
-    await message.answer(text, reply_markup=main_menu)
-    await state.finish()
+        await message.answer(text, reply_markup=main_menu)
+        await state.finish()
+    else:
+        text = "Неизвестная команда\nНажмите /start для перезапуска"
+
+        main_menu = ReplyKeyboardMarkup(
+            keyboard=[
+                [
+                    KeyboardButton(text="Начать заказ 🍽"),
+                ],
+                [
+                    KeyboardButton(text="Оставить отзыв 📝"),
+                    KeyboardButton(text="Мои заказы 🛒")
+                ],
+                [
+                    KeyboardButton(text="Контакты 📲"),
+                    KeyboardButton(text="Настройки 🛠")
+                ]
+            ],
+            resize_keyboard=True
+        )
+
+        await message.answer(text, reply_markup=main_menu)
+        await state.finish()
 
 
