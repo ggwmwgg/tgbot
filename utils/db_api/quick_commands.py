@@ -297,7 +297,7 @@ async def get_categories(lang: str) -> List[Item]:
 #async def get_categories(lang: str):
     list = []
     if lang == "ru":
-        list_lul = ["Оформить заказ", "Корзина", "Назад"]
+        list_lul = ["Оформить заказ 🚚", "Корзина 🛒", "Назад 🔙"]
         list.append(list_lul[0])
         list.append(list_lul[1])
         ru = await Item.query.distinct(Item.cat_ru).gino.all()
@@ -307,7 +307,7 @@ async def get_categories(lang: str) -> List[Item]:
 
         return list
     elif lang == "uz":
-        list_lul = ["Buyurtma berish", "Savat", "Ortga"]
+        list_lul = ["Buyurtma berish 🚚", "Savat 🛒", "Ortga 🔙"]
         list.append(list_lul[0])
         list.append(list_lul[1])
         uz = await Item.query.distinct(Item.cat_uz).gino.all()
@@ -316,7 +316,7 @@ async def get_categories(lang: str) -> List[Item]:
         list.append(list_lul[2])
         return list
     elif lang == "en":
-        list_lul = ["Make an order", "Cart", "Back"]
+        list_lul = ["Make an order 🚚", "Cart 🛒", "Back 🔙"]
         en = await Item.query.distinct(Item.cat_en).gino.all()
         list.append(list_lul[0])
         list.append(list_lul[1])
@@ -329,7 +329,7 @@ async def get_categories(lang: str) -> List[Item]:
 async def get_subcategories(category: str, lang: str):
     list = []
     if lang == "ru":
-        list_lul = ["Оформить заказ", "Корзина", "Назад"]
+        list_lul = ["Оформить заказ 🚚", "Корзина 🛒", "Назад 🔙"]
         list.append(list_lul[0])
         list.append(list_lul[1])
         ru = await Item.query.where(Item.cat_ru == category).order_by(Item.id.desc()).gino.all()
@@ -338,7 +338,7 @@ async def get_subcategories(category: str, lang: str):
         list.append(list_lul[2])
         return list
     elif lang == "uz":
-        list_lul = ["Buyurtma berish", "Savat", "Ortga"]
+        list_lul = ["Buyurtma berish 🚚", "Savat 🛒", "Ortga 🔙"]
         list.append(list_lul[0])
         list.append(list_lul[1])
         uz = await Item.query.where(Item.cat_uz == category).order_by(Item.id.desc()).gino.all()
@@ -347,7 +347,7 @@ async def get_subcategories(category: str, lang: str):
         list.append(list_lul[2])
         return list
     elif lang == "en":
-        list_lul = ["Make an order", "Cart", "Back"]
+        list_lul = ["Make an order 🚚", "Cart 🛒", "Back 🔙"]
         en = await Item.query.where(Item.cat_en == category).order_by(Item.id.desc()).gino.all()
         list.append(list_lul[0])
         list.append(list_lul[1])

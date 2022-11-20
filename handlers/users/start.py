@@ -1,20 +1,14 @@
 from aiogram import types
 from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters.builtin import CommandStart, Text
-
 import re
-
-from aiogram.types import ReplyKeyboardRemove, ContentType
-
-from keyboards.default import languages, nmbr, main_menu
+from aiogram.types import ReplyKeyboardRemove, ReplyKeyboardMarkup, KeyboardButton
 from loader import dp
-from states.orders import Reg, Order
+from states.orders import Reg
 import os
 from dotenv import load_dotenv
 from twilio.rest import Client
 from random import randint
-from data import lang_en
-# from utils.db_api.models import User
 from datetime import datetime
 from utils.misc import rate_limit
 from utils.db_api import quick_commands
@@ -24,23 +18,51 @@ from utils.db_api import quick_commands
 @dp.message_handler(CommandStart(), state='*') #  state=None
 async def bot_start(message: types.Message):
     if await quick_commands.select_user(id=message.from_user.id):
-        await message.answer(f'Приступим к оформлению?', reply_markup=main_menu)
+        main_menu = ReplyKeyboardMarkup(
+            keyboard=[
+                [
+                    KeyboardButton(text="Начать заказ 🍽"),
+                ],
+                [
+                    KeyboardButton(text="Оставить отзыв 📝"),
+                    KeyboardButton(text="Мои заказы 🛒")
+                ],
+                [
+                    KeyboardButton(text="Контакты 📲"),
+                    KeyboardButton(text="Настройки 🛠")
+                ]
+            ],
+            resize_keyboard=True
+        )
+        await message.answer(f'Приступим к оформлению? 📝', reply_markup=main_menu)
         # await Order.d_or_d.set()
     else:
-    # await message.answer(f'Здравствуйте, {message.from_user.full_name}!')
-    # Добавить кнопки , добавить мультиязычность
+        languages = ReplyKeyboardMarkup(
+            keyboard=[
+                [
+                    KeyboardButton(text="O'zbek 🇺🇿"),
+                ],
+                [
+                    KeyboardButton(text="Русский 🇷🇺")
+                ],
+                [
+                    KeyboardButton(text="English 🇺🇸")
+                ]
+            ],
+            resize_keyboard=True
+        )
         await message.answer(f"Здравствуйте, {message.from_user.full_name}!\n"
-                             "Выберите язык обслуживания.\n\n"
+                             "Выберите язык обслуживания.🗣\n\n"
                              f"Hello, {message.from_user.full_name}!\n"
-                             "Please, choose your language\n\n"
+                             "Please, choose your language.🗣\n\n"
                              f"Keling, {message.from_user.full_name}!\n"
-                             "Avvaliga xizmat ko'rsatish tilini tanlab olaylik", reply_markup=languages)
+                             "Avvaliga xizmat ko'rsatish tilini tanlab olaylik.🗣", reply_markup=languages)
 
         await Reg.language.set()
 
 
 @rate_limit(2, key="language")
-@dp.message_handler(Text(equals=["O'zbek", "Русский", "English"]), state=Reg.language)
+@dp.message_handler(Text(equals=["O'zbek 🇺🇿", "Русский 🇷🇺", "English 🇺🇸"]), state=Reg.language)
 async def language(message: types.Message, state: FSMContext):
     language = message.text
     user_id = message.from_user.id
@@ -53,23 +75,23 @@ async def language(message: types.Message, state: FSMContext):
         await state.update_data(username=username)
 
     await state.update_data(user_id=user_id, chat_id=chat_id)
-    if language == "Русский":
-        await message.answer(f"Ваш язык: Русский", reply_markup=ReplyKeyboardRemove())
+    if language == "Русский 🇷🇺":
+        await message.answer("Ваш язык: Русский", reply_markup=ReplyKeyboardRemove())
         await state.update_data(lang='ru')
-        await message.answer(f"Как к вам обращаться?")
+        await message.answer("Как к вам обращаться?")
         await Reg.next()
-    elif language == "O'zbek":
-        await message.answer(f"Sizning tilingiz: O'zbek", reply_markup=ReplyKeyboardRemove())
+    elif language == "O'zbek 🇺🇿":
+        await message.answer("Sizning tilingiz: O'zbek", reply_markup=ReplyKeyboardRemove())
         await state.update_data(lang='uz')
-        await message.answer(f"Sizga qanday nom berishim kerak?")
+        await message.answer("Sizga qanday nom berishim kerak?")
         await Reg.next()
-    elif language == "English":
-        await message.answer(f"Your language set to: English", reply_markup=ReplyKeyboardRemove())
+    elif language == "English 🇺🇸":
+        await message.answer("Your language set to: English", reply_markup=ReplyKeyboardRemove())
         await state.update_data(lang='en')
-        await message.answer(f"What is your name?")
+        await message.answer("What is your name?")
         await Reg.next()
     else:
-        await message.answer(f"Error")
+        await message.answer("Ошибка")
 
 
 @rate_limit(2, key="name")
@@ -77,7 +99,15 @@ async def language(message: types.Message, state: FSMContext):
 async def name(message: types.Message, state: FSMContext):
     name = message.text
     await state.update_data(name=name)
-    await message.answer(f"Отправьте ваш номер или введите его в формате +998911234567", reply_markup=nmbr)
+    nmbr = ReplyKeyboardMarkup(
+        keyboard=[
+            [
+                KeyboardButton(text="Отправить номер 📲", request_contact=True)
+            ]
+        ],
+        resize_keyboard=True
+    )
+    await message.answer("Отправьте ваш номер или введите его в формате +998911234567", reply_markup=nmbr)
     await Reg.next()
 
 
@@ -90,8 +120,6 @@ async def nn(message: types.Message, state: FSMContext):
     elif message.contact.phone_number:
         number_i = message.contact.phone_number
         number = "+" + number_i
-
-    # await message.answer(f"{number}")
     pattern = '(^\+998[8-9])\d{8}$'
     result = re.match(pattern, number)
 
@@ -106,16 +134,14 @@ async def nn(message: types.Message, state: FSMContext):
             token = str(os.getenv("token_twilio"))
             client = Client(account, token)
 
-            # messages = client.messages.create(to=f"{number}", from_="+14632231765",
-            #                                  body=f"GGsellbot: {verification_code}")
-
-            await message.answer(f"На ваш номер был отправлен код, пожалуйста введите его ниже. {verification_code}",
-                                 reply_markup=ReplyKeyboardRemove())
+            # messages = client.messages.create(to=f"{number}",from_="+14632231765",body=f"GGsellbot: {verification_code}")
+            text = "На ваш номер был отправлен код, пожалуйста введите его ниже. %s" % verification_code
+            await message.answer(text,reply_markup=ReplyKeyboardRemove())
             await state.update_data(verification_code=verification_code)
             await Reg.next()
     else:
-        await message.answer(f"Неправильный формат.\n"
-                             f"Пожалуйста, отправьте ваш номер или введите его в формате +998911234567")
+        await message.answer("Неправильный формат.\nПожалуйста, отправьте ваш номер или введите его в формате "
+                             "+998911234567")
 
 
 @rate_limit(2, key="code")
@@ -136,11 +162,24 @@ async def verification(message: types.Message, state: FSMContext):
             await quick_commands.add_user(id=message.from_user.id, name=data["name"], lang_user=data["lang"],
                                           number=data["number"], username=data["username"],
                                           referral=message.from_user.id)
-            await message.answer(f'Приступим к оформлению?', reply_markup=main_menu)
+            main_menu = ReplyKeyboardMarkup(
+                keyboard=[
+                    [
+                        KeyboardButton(text="Начать заказ 🍽"),
+                    ],
+                    [
+                        KeyboardButton(text="Оставить отзыв 📝"),
+                        KeyboardButton(text="Мои заказы 🛒")
+                    ],
+                    [
+                        KeyboardButton(text="Контакты 📲"),
+                        KeyboardButton(text="Настройки 🛠")
+                    ]
+                ],
+                resize_keyboard=True
+            )
+            await message.answer('Приступим к оформлению?', reply_markup=main_menu)
             await state.finish()
         else:
-            await message.answer(f"Неверный код.\nПожалуйста, введите его заново.")
-    # await state.finish()
+            await message.answer("Неверный код.\nПожалуйста, введите его заново.")
 
-
-# Настройки

@@ -2,10 +2,10 @@ import re
 from aiogram import types
 from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters.builtin import Text, Command
-from aiogram.types import ReplyKeyboardRemove
-from keyboards.default import main_menu, languages, ac_main, ac_users, ac_back
-from keyboards.inline import keyboard_markup, lang_markup, ban_markup, rights_markup, orders_a, order_info, \
-    order_by_id_quantity
+from aiogram.types import ReplyKeyboardRemove, ReplyKeyboardMarkup, KeyboardButton
+# from keyboards.default import main_menu, languages, ac_main, ac_users, ac_back
+#from keyboards.inline import keyboard_markup, lang_markup, ban_markup, rights_markup, orders_a, order_info, \
+#    order_by_id_quantity
 from loader import dp
 from states.orders import Reg, Admin
 from utils.db_api import quick_commands
@@ -23,12 +23,66 @@ async def acp(message: types.Message, state: FSMContext):
         rights = await quick_commands.check_rights(id=message.from_user.id)
         # Проверять есть ли юзер в админах
         if rights == 0:
-            await message.answer("You do not have permission to use this command", reply_markup=main_menu)
+
+            main_menu = ReplyKeyboardMarkup(
+                keyboard=[
+                    [
+                        KeyboardButton(text="Начать заказ 🍽"),
+                    ],
+                    [
+                        KeyboardButton(text="Оставить отзыв 📝"),
+                        KeyboardButton(text="Мои заказы 🛒")
+                    ],
+                    [
+                        KeyboardButton(text="Контакты 📲"),
+                        KeyboardButton(text="Настройки 🛠")
+                    ]
+                ],
+                resize_keyboard=True
+            )
+
+            await message.answer("У вас нет прав на эту команду", reply_markup=main_menu)
         elif rights == 1: # Если есть в админах
-            await message.answer("You have successfully logged in", reply_markup=ac_main)
+
+            ac_main = ReplyKeyboardMarkup(
+                keyboard=[
+                    [
+                        KeyboardButton(text="Пользователи 🧑‍🤝‍🧑"),
+                        KeyboardButton(text="Филиалы 🏢"),
+                    ],
+                    [
+                        KeyboardButton(text="Заказы 🛒"),
+                        KeyboardButton(text="Товары 🍽"),
+                    ],
+                    [
+                        KeyboardButton(text="Назад 🔙")
+                    ]
+                ],
+                resize_keyboard=True
+            )
+
+            await message.answer("Вы успешно авторизовались", reply_markup=ac_main)
             await Admin.a_main.set()
         elif rights == 2: # Если есть в операторах
-            await message.answer("You do not have permission to use this command", reply_markup=main_menu)
+
+            main_menu = ReplyKeyboardMarkup(
+                keyboard=[
+                    [
+                        KeyboardButton(text="Начать заказ 🍽"),
+                    ],
+                    [
+                        KeyboardButton(text="Оставить отзыв 📝"),
+                        KeyboardButton(text="Мои заказы 🛒")
+                    ],
+                    [
+                        KeyboardButton(text="Контакты 📲"),
+                        KeyboardButton(text="Настройки 🛠")
+                    ]
+                ],
+                resize_keyboard=True
+            )
+
+            await message.answer("У вас нет прав на эту команду", reply_markup=main_menu)
         elif rights == 3: # Если есть в курьерах
             user = await quick_commands.select_user(id=message.from_user.id)
             orders = await quick_commands.select_all_orders_courier(user.id)
@@ -68,28 +122,59 @@ async def acp(message: types.Message, state: FSMContext):
                     count_all += 1
             orders_list.add(types.InlineKeyboardButton("Обновить список", callback_data="refresh"))
             orders_list.add(types.InlineKeyboardButton("Назад", callback_data="back"))
-            greeting = "<b>Здравствуйте, %s!</b>\n\nВам назначено <b>%s</b> заказов.\nВсего заказов: <b>%s</b>\n\n<i>Выберите заказ из списка ниже:</i>\n" % (user.name, count, count_all)
+            greeting = "<b>Здравствуйте, %s!</b>\n\nВам назначено <b>%s</b> заказов.\nВсего заказов: <b>%s</b>\n\n<i>Выберите заказ из списка ниже:</i>\n"
+            greeting = greeting % (user.name, count, count_all)
             await message.answer(greeting, reply_markup=orders_list)
             await Admin.c_main.set()
 
 
     else:
         # await message.answer(f'Здравствуйте, {message.from_user.full_name}!')
+
+        languages = ReplyKeyboardMarkup(
+            keyboard=[
+                [
+                    KeyboardButton(text="O'zbek 🇺🇿"),
+                ],
+                [
+                    KeyboardButton(text="Русский 🇷🇺")
+                ],
+                [
+                    KeyboardButton(text="English 🇺🇸")
+                ]
+            ],
+            resize_keyboard=True
+        )
+
         await message.answer(f"Здравствуйте, {message.from_user.full_name}!\n"
-                             "Выберите язык обслуживания.\n\n"
+                             "Выберите язык обслуживания.🗣\n\n"
                              f"Hello, {message.from_user.full_name}!\n"
-                             "Please, choose your language\n\n"
+                             "Please, choose your language.🗣\n\n"
                              f"Keling, {message.from_user.full_name}!\n"
-                             "Avvaliga xizmat ko'rsatish tilini tanlab olaylik", reply_markup=languages)
+                             "Avvaliga xizmat ko'rsatish tilini tanlab olaylik.🗣", reply_markup=languages)
 
         await Reg.language.set()
 
 
 # Клавиатура для админа на управление пользователями (клавиатура поиск по id/номеру и назад)
 @rate_limit(1, key="admin_main")
-@dp.message_handler(Text(equals=["Users"]), state=Admin.a_main)
+@dp.message_handler(Text(equals=["Пользователи 🧑‍🤝‍🧑", "Users 🧑‍🤝‍🧑", "Foydalanuvchilar 🧑‍🤝‍🧑"]), state=Admin.a_main)
 async def a_users_main_m(message: types.Message):
-    await message.answer("Choose option", reply_markup=ac_users)
+
+    ac_users = ReplyKeyboardMarkup(
+        keyboard=[
+            [
+                KeyboardButton(text="Инфо по ID 🆔"),
+                KeyboardButton(text="Инфо по номеру 📱"),
+            ],
+            [
+                KeyboardButton(text="Назад 🔙")
+            ]
+        ],
+        resize_keyboard=True
+    )
+
+    await message.answer("Выберите опцию", reply_markup=ac_users)
     await Admin.users.set()
 
 
@@ -97,7 +182,7 @@ async def a_users_main_m(message: types.Message):
 # все активные заказы по филиалу, все заказы по id/номеру пользователя, все активные заказы по id/номеру пользователя,
 # инфо заказа по id и назад)
 @rate_limit(1, key="admin_main")
-@dp.message_handler(Text(equals=["Orders"]), state=Admin.a_main)
+@dp.message_handler(Text(equals=["Заказы 🛒", "Orders 🛒", "Buyurtmalar 🛒"]), state=Admin.a_main)
 async def a_orders_main_m(message: types.Message, state: FSMContext):
     orders = await quick_commands.select_all_orders()
     count_all = 0  # Счетчик всех заказов
@@ -122,6 +207,17 @@ async def a_orders_main_m(message: types.Message, state: FSMContext):
     txt = koker + text + kikir
     lilo = await message.answer("Загрузка...", reply_markup=ReplyKeyboardRemove())
     await lilo.delete()
+
+    orders_a = types.InlineKeyboardMarkup(row_width=1)
+    orders_a.row(types.InlineKeyboardButton("Все", callback_data='all'),
+                 types.InlineKeyboardButton("<= Активные", callback_data='all_a'))
+    orders_a.row(types.InlineKeyboardButton("Все по филиалу", callback_data='branch'),
+                 types.InlineKeyboardButton("<= Активные", callback_data='branch_a'))
+    orders_a.row(types.InlineKeyboardButton("Все по id/номеру пользователя", callback_data='num_id'),
+                 types.InlineKeyboardButton("<= Активные", callback_data='num_id_a'))
+    orders_a.row(types.InlineKeyboardButton("Инфо по id заказа", callback_data='num_id_o'))
+    orders_a.row(types.InlineKeyboardButton("Назад", callback_data='back'))
+
     msg = await message.answer(txt, reply_markup=orders_a)
     await state.update_data(msg_id=msg.message_id)
     await Admin.orders.set()
@@ -129,34 +225,92 @@ async def a_orders_main_m(message: types.Message, state: FSMContext):
 
 # Возврат в главное меню из админки
 @rate_limit(1, key="admin_main")
-@dp.message_handler(Text(equals=["Back"]), state=Admin.a_main)
+@dp.message_handler(Text(equals=["Назад 🔙", "Orqaga 🔙", "Back 🔙"]), state=Admin.a_main)
 async def a_users_main_m_back(message: types.Message, state: FSMContext):
-    await message.answer("Choose option", reply_markup=main_menu)
+
+    main_menu = ReplyKeyboardMarkup(
+        keyboard=[
+            [
+                KeyboardButton(text="Начать заказ 🍽"),
+            ],
+            [
+                KeyboardButton(text="Оставить отзыв 📝"),
+                KeyboardButton(text="Мои заказы 🛒")
+            ],
+            [
+                KeyboardButton(text="Контакты 📲"),
+                KeyboardButton(text="Настройки 🛠")
+            ]
+        ],
+        resize_keyboard=True
+    )
+
+    await message.answer("Выберите опцию", reply_markup=main_menu)
     await state.finish()
 
 
 # Возврат на первый хендлер админки при нажатии на кнопку назад из управления пользователями|заказами
 @rate_limit(1, key="admin_main_id")
-@dp.message_handler(Text(equals=["Back"]), state=Admin.users)
-@dp.message_handler(Text(equals=["Back"]), state=Admin.orders)
+@dp.message_handler(Text(equals=["Назад 🔙", "Orqaga 🔙", "Back 🔙"]), state=Admin.users)
+@dp.message_handler(Text(equals=["Назад 🔙", "Orqaga 🔙", "Back 🔙"]), state=Admin.orders)
 async def a_users_back(message: types.Message):
-    await message.answer("Choose option", reply_markup=ac_main)
+
+    ac_main = ReplyKeyboardMarkup(
+        keyboard=[
+            [
+                KeyboardButton(text="Пользователи 🧑‍🤝‍🧑"),
+                KeyboardButton(text="Филиалы 🏢"),
+            ],
+            [
+                KeyboardButton(text="Заказы 🛒"),
+                KeyboardButton(text="Товары 🍽"),
+            ],
+            [
+                KeyboardButton(text="Назад 🔙")
+            ]
+        ],
+        resize_keyboard=True
+    )
+
+    await message.answer("Выберите опцию", reply_markup=ac_main)
     await Admin.a_main.set()
 
 
 # Поиск пользователя по номеру
 @rate_limit(1, key="admin_main_id")
-@dp.message_handler(Text(equals=["Info by number"]), state=Admin.users)
+@dp.message_handler(Text(equals=["Инфо по номеру 📱", "Info by number 📱", "Raqam bo'yicha ma'lumot 📱"]), state=Admin.users)
 async def a_users_info_num_kok(message: types.Message):
-    await message.answer("Enter user number", reply_markup=ac_back)
+
+    ac_back = ReplyKeyboardMarkup(
+        keyboard=[
+            [
+                KeyboardButton(text="Назад 🔙")
+            ],
+        ],
+        resize_keyboard=True,
+        one_time_keyboard=True
+    )
+
+    await message.answer("Введите номер пользователя", reply_markup=ac_back)
     await Admin.user_info_by_number.set()
 
 
 # Поиск пользователя по id
 @rate_limit(1, key="admin_main_id")
-@dp.message_handler(Text(equals=["Info by ID"]), state=Admin.users)
+@dp.message_handler(Text(equals=["Инфо по ID 🆔", "Info by ID 🆔", "ID bo'yicha ma'lumot 🆔"]), state=Admin.users)
 async def a_users_info_id(message: types.Message):
-    await message.answer("Enter user ID", reply_markup=ac_back)
+
+    ac_back = ReplyKeyboardMarkup(
+        keyboard=[
+            [
+                KeyboardButton(text="Назад 🔙")
+            ],
+        ],
+        resize_keyboard=True,
+        one_time_keyboard=True
+    )
+
+    await message.answer("Введите ID пользователя", reply_markup=ac_back)
     await Admin.user_info_by_id.set()
 
 
@@ -167,7 +321,22 @@ async def a_users_n(message: types.Message, state: FSMContext):
     number = message.text
     pattern = '(^\+998[8-9])\d{8}$'
     result = re.match(pattern, number)
-    if message.text == "Back":
+    back_b = ["Назад 🔙", "Orqaga 🔙", "Back 🔙"]
+    if message.text in back_b:
+
+        ac_users = ReplyKeyboardMarkup(
+            keyboard=[
+                [
+                    KeyboardButton(text="Инфо по ID 🆔"),
+                    KeyboardButton(text="Инфо по номеру 📱"),
+                ],
+                [
+                    KeyboardButton(text="Назад 🔙")
+                ]
+            ],
+            resize_keyboard=True
+        )
+
         await message.answer("Choose option", reply_markup=ac_users)
         await Admin.users.set()
     elif result:
@@ -184,6 +353,16 @@ async def a_users_n(message: types.Message, state: FSMContext):
                 user.cashback, banned_s, rights_s, time_registered, time_updated)
             lilo = await message.answer("Загрузка...", reply_markup=ReplyKeyboardRemove())
             await lilo.delete()
+
+            keyboard_markup = types.InlineKeyboardMarkup(row_width=1)
+            keyboard_markup.add(types.InlineKeyboardButton("Изменить имя 📝", callback_data='name'),
+                                types.InlineKeyboardButton("Сменить язык 🗣", callback_data='lang'),
+                                types.InlineKeyboardButton("Сменить номер 📲", callback_data='number'),
+                                types.InlineKeyboardButton("Изменить кешбек 🤑", callback_data='cashback'),
+                                types.InlineKeyboardButton("Бан/Разбан 🟥", callback_data='ban'),
+                                types.InlineKeyboardButton("Изменить права 🪬", callback_data='is_admin'),
+                                types.InlineKeyboardButton("Назад 🔙", callback_data='back'))
+
             await message.answer(info_a, reply_markup=keyboard_markup)
 
             await Admin.user_main_info.set()
@@ -191,10 +370,35 @@ async def a_users_n(message: types.Message, state: FSMContext):
         except Exception as e:
             err_en = "Error: %s" % e
             err = "Ошибка:\n%s" % err_en
+
+            ac_users = ReplyKeyboardMarkup(
+                keyboard=[
+                    [
+                        KeyboardButton(text="Инфо по ID 🆔"),
+                        KeyboardButton(text="Инфо по номеру 📱"),
+                    ],
+                    [
+                        KeyboardButton(text="Назад 🔙")
+                    ]
+                ],
+                resize_keyboard=True
+            )
+
             await message.answer(err, reply_markup=ac_users)
             await Admin.users.set()
     else:
-        err_wrong_en = "Wrong number format\nPlease, entry number in format +998901234567"
+
+        ac_back = ReplyKeyboardMarkup(
+            keyboard=[
+                [
+                    KeyboardButton(text="Назад 🔙")
+                ],
+            ],
+            resize_keyboard=True,
+            one_time_keyboard=True
+        )
+
+        err_wrong_en = "Неверный формат номера\nПожалуйста введите номер в формате +998901234567"
         await message.answer(err_wrong_en, reply_markup=ac_back)
 
 
@@ -202,9 +406,23 @@ async def a_users_n(message: types.Message, state: FSMContext):
 @rate_limit(1, key="admin_main_id")
 @dp.message_handler(state=Admin.user_info_by_id, content_types=["text"])
 async def a_users(message: types.Message, state: FSMContext):
-    if message.text == "Back":
+    back_b = ["Назад 🔙", "Orqaga 🔙", "Back 🔙"]
+    if message.text in back_b:
 
-        await message.answer("Choose option", reply_markup=ac_users)
+        ac_users = ReplyKeyboardMarkup(
+            keyboard=[
+                [
+                    KeyboardButton(text="Инфо по ID 🆔"),
+                    KeyboardButton(text="Инфо по номеру 📱"),
+                ],
+                [
+                    KeyboardButton(text="Назад 🔙")
+                ]
+            ],
+            resize_keyboard=True
+        )
+
+        await message.answer("Выберите опцию", reply_markup=ac_users)
         await Admin.users.set()
     else:
         try:
@@ -216,18 +434,43 @@ async def a_users(message: types.Message, state: FSMContext):
             banned_s = await quick_commands.check_ban_info(user.id)
             time_registered = user.created_at.strftime("%d.%m.%Y %H:%M:%S")
             time_updated = user.updated_at.strftime("%d.%m.%Y %H:%M:%S")
-            info_a = "ID: %s\nName: %s\nLanguage: %s\nNumber: %s\nUsername: @%s\nOrders number: %s\nReferral link: %s\nCashback: %s\nBanned? %s\nRights: %s\nRegistration date: %s\nLast update date: %s\n\n" % (
+            info_a = "ID: %s\nИмя: %s\nЯзык: %s\nНомер: %s\nИмя пользователя: @%s\nКоличество заказов: %s\nРеферальная ссылка: %s\nКешбек: %s\nЗабанен? %s\nПрава: %s\nДата регистрации: %s\nДата последнего обновления: %s\n\n" % (
                 user.id, user.name, user.lang_user, user.number, user.username, user.orders_no, user.referral,
                 user.cashback, banned_s, rights_s, time_registered, time_updated)
+
             lilo = await message.answer("Загрузка...", reply_markup=ReplyKeyboardRemove())
             await lilo.delete()
+
+            keyboard_markup = types.InlineKeyboardMarkup(row_width=1)
+            keyboard_markup.add(types.InlineKeyboardButton("Изменить имя 📝", callback_data='name'),
+                                types.InlineKeyboardButton("Сменить язык 🗣", callback_data='lang'),
+                                types.InlineKeyboardButton("Сменить номер 📲", callback_data='number'),
+                                types.InlineKeyboardButton("Изменить кешбек 🤑", callback_data='cashback'),
+                                types.InlineKeyboardButton("Бан/Разбан 🟥", callback_data='ban'),
+                                types.InlineKeyboardButton("Изменить права 🪬", callback_data='is_admin'),
+                                types.InlineKeyboardButton("Назад 🔙", callback_data='back'))
+
             await message.answer(info_a, reply_markup=keyboard_markup)
 
             await Admin.user_main_info.set()
 
         except Exception as e:
-            err_en = "Error: %s" % e
+            err_en = "Ошибка: %s" % e
             err = "Ошибка:\n%s" % err_en
+
+            ac_users = ReplyKeyboardMarkup(
+                keyboard=[
+                    [
+                        KeyboardButton(text="Инфо по ID 🆔"),
+                        KeyboardButton(text="Инфо по номеру 📱"),
+                    ],
+                    [
+                        KeyboardButton(text="Назад 🔙")
+                    ]
+                ],
+                resize_keyboard=True
+            )
+
             await message.answer(err, reply_markup=ac_users)
             await Admin.users.set()
 
@@ -240,9 +483,6 @@ async def inline_kb_answer_callback_handler(query: types.CallbackQuery, state: F
     await query.answer()  # send answer to close the rounding circle
 
     answer_data = query.data
-    # logging.info(f"answer_data={answer_data}")
-    # here we can work with query.data
-    # "name", "lang", "number", "orders_no", "cashback", "ban", "is_admin", "back"
     async with state.proxy() as data:
         user_id = int(data["user_id"])
         user = await quick_commands.select_user(user_id)
@@ -253,46 +493,78 @@ async def inline_kb_answer_callback_handler(query: types.CallbackQuery, state: F
 
         if answer_data == 'name':
             await dp.bot.delete_message(query.message.chat.id, query.message.message_id)
-            name_change = "Enter a new name for user %s" % user.id
+            name_change = "Введите имя для пользователя %s" % user.id
             await dp.bot.send_message(query.from_user.id, name_change, reply_markup=ReplyKeyboardRemove())
             await Admin.user_main_info_name.set()
         elif answer_data == 'lang':
-            info_a = "ID: %s\nName: %s\nLanguage: %s\nNumber: %s\nUsername: @%s\nOrders number: %s\nReferral link: %s\nCashback: %s\nBanned? %s\nRights: %s\nRegistration date: %s\nLast update date: %s\n\n" % (
+            info_a = "ID: %s\nИмя: %s\nЯзык: %s\nНомер: %s\nИмя пользователя: @%s\nКоличество заказов: %s\nРеферальная ссылка: %s\nКешбек: %s\nЗабанен? %s\nПрава: %s\nДата регистрации: %s\nДата последнего обновления: %s\n\n" % (
                 user.id, user.name, user.lang_user, user.number, user.username, user.orders_no, user.referral,
                 user.cashback, banned_s, rights_s, time_registered, time_updated)
-            lang_choose = info_a + "Choose language"
+            lang_choose = info_a + "Выберите язык"
+
+            lang_markup = types.InlineKeyboardMarkup(row_width=1)
+            lang_markup.add(types.InlineKeyboardButton("Русский 🇷🇺", callback_data='ru'),
+                            types.InlineKeyboardButton("Узбекский 🇺🇿", callback_data='uz'),
+                            types.InlineKeyboardButton("Английский 🇺🇸", callback_data='en'))
+
             await dp.bot.edit_message_text(chat_id=query.from_user.id, message_id=query.message.message_id,
                                            text=lang_choose, reply_markup=lang_markup)
             await Admin.user_main_info_lang.set()
         elif answer_data == 'number':
             await dp.bot.delete_message(query.message.chat.id, query.message.message_id)
-            number_change = "Enter a new number in format +998911234567 for user %s" % user.id
+            number_change = "Введите номер телефона в формате +998911234567 для пользователя %s" % user.id
             await dp.bot.send_message(query.from_user.id, number_change, reply_markup=ReplyKeyboardRemove())
             await Admin.user_main_info_number.set()
         elif answer_data == 'cashback':
             await dp.bot.delete_message(query.message.chat.id, query.message.message_id)
-            cashback_change = "Enter a new cashback amount for user %s" % user.id
+            cashback_change = "Введите количество кешбека для пользователя %s" % user.id
             await dp.bot.send_message(query.from_user.id, cashback_change, reply_markup=ReplyKeyboardRemove())
             await Admin.user_main_info_cashback.set()
         elif answer_data == 'ban':
-            info_a = "ID: %s\nName: %s\nLanguage: %s\nNumber: %s\nUsername: @%s\nOrders number: %s\nReferral link: %s\nCashback: %s\nBanned? %s\nRights: %s\nRegistration date: %s\nLast update date: %s\n\n" % (
+            info_a = "ID: %s\nИмя: %s\nЯзык: %s\nНомер: %s\nИмя пользователя: @%s\nКоличество заказов: %s\nРеферальная ссылка: %s\nКешбек: %s\nЗабанен? %s\nПрава: %s\nДата регистрации: %s\nДата последнего обновления: %s\n\n" % (
                 user.id, user.name, user.lang_user, user.number, user.username, user.orders_no, user.referral,
                 user.cashback, banned_s, rights_s, time_registered, time_updated)
-            ban_choose = info_a + "Choose an action"
+            ban_choose = info_a + "Выберите действие"
+
+            ban_markup = types.InlineKeyboardMarkup(row_width=1)
+            ban_markup.add(types.InlineKeyboardButton("Забанить 🟥", callback_data='ban'),
+                           types.InlineKeyboardButton("Разбанить 🟩", callback_data='unban'))
+
             await dp.bot.edit_message_text(chat_id=query.from_user.id, message_id=query.message.message_id,
                                            text=ban_choose, reply_markup=ban_markup)
             await Admin.user_main_info_ban.set()
         elif answer_data == 'is_admin':
-            info_a = "ID: %s\nName: %s\nLanguage: %s\nNumber: %s\nUsername: @%s\nOrders number: %s\nReferral link: %s\nCashback: %s\nBanned? %s\nRights: %s\nRegistration date: %s\nLast update date: %s\n\n" % (
+            info_a = "ID: %s\nИмя: %s\nЯзык: %s\nНомер: %s\nИмя пользователя: @%s\nКоличество заказов: %s\nРеферальная ссылка: %s\nКешбек: %s\nЗабанен? %s\nПрава: %s\nДата регистрации: %s\nДата последнего обновления: %s\n\n" % (
                 user.id, user.name, user.lang_user, user.number, user.username, user.orders_no, user.referral,
                 user.cashback, banned_s, rights_s, time_registered, time_updated)
-            rights_choose = info_a + "Choose user rights"
+            rights_choose = info_a + "Установите права для пользователя"
+
+            rights_markup = types.InlineKeyboardMarkup(row_width=1)
+            rights_markup.add(types.InlineKeyboardButton("Админ 🪬", callback_data='1'),
+                              types.InlineKeyboardButton("Оператор 📞", callback_data='2'),
+                              types.InlineKeyboardButton("Курьер 🚚", callback_data='3'),
+                              types.InlineKeyboardButton("Пользователь 👨‍", callback_data='0'))
+
             await dp.bot.edit_message_text(chat_id=query.from_user.id, message_id=query.message.message_id,
                                            text=rights_choose, reply_markup=rights_markup)
             await Admin.user_main_info_rights.set()
         else:
             await dp.bot.delete_message(query.message.chat.id, query.message.message_id)
-            await dp.bot.send_message(query.from_user.id, "Choose option", reply_markup=ac_users)
+
+            ac_users = ReplyKeyboardMarkup(
+                keyboard=[
+                    [
+                        KeyboardButton(text="Инфо по ID 🆔"),
+                        KeyboardButton(text="Инфо по номеру 📱"),
+                    ],
+                    [
+                        KeyboardButton(text="Назад 🔙")
+                    ]
+                ],
+                resize_keyboard=True
+            )
+
+            await dp.bot.send_message(query.from_user.id, "Выберите опцию", reply_markup=ac_users)
             await Admin.users.set()
 
 
@@ -310,13 +582,23 @@ async def name_ac_change(message: types.Message, state: FSMContext):
         time_registered = user1.created_at.strftime("%d.%m.%Y %H:%M:%S")
         time_updated = user1.updated_at.strftime("%d.%m.%Y %H:%M:%S")
 
-        info_a = "ID: %s\nName: %s\nLanguage: %s\nNumber: %s\nUsername: @%s\nOrders number: %s\nReferral link: %s\nCashback: %s\nBanned? %s\nRights: %s\nRegistration date: %s\nLast update date: %s\n\n" % (
+        info_a = "ID: %s\nИмя: %s\nЯзык: %s\nНомер: %s\nИмя пользователя: @%s\nКоличество заказов: %s\nРеферальная ссылка: %s\nКешбек: %s\nЗабанен? %s\nПрава: %s\nДата регистрации: %s\nДата последнего обновления: %s\n\n" % (
             user1.id, user1.name, user1.lang_user, user1.number, user1.username, user1.orders_no, user1.referral,
             user1.cashback, banned_s, rights_s, time_registered, time_updated)
-        info_b = "User %s name changed to %s" % (user_id, name)
+        info_b = "Имя пользователя %s изменено на %s" % (user_id, name)
         name_changed = info_a + info_b
-        c_c = "Your name was changed to %s" % name
+        c_c = "Ваше имя изменено на %s" % name
         await dp.bot.send_message(user_id, c_c)
+
+        keyboard_markup = types.InlineKeyboardMarkup(row_width=1)
+        keyboard_markup.add(types.InlineKeyboardButton("Изменить имя 📝", callback_data='name'),
+                            types.InlineKeyboardButton("Сменить язык 🗣", callback_data='lang'),
+                            types.InlineKeyboardButton("Сменить номер 📲", callback_data='number'),
+                            types.InlineKeyboardButton("Изменить кешбек 🤑", callback_data='cashback'),
+                            types.InlineKeyboardButton("Бан/Разбан 🟥", callback_data='ban'),
+                            types.InlineKeyboardButton("Изменить права 🪬", callback_data='is_admin'),
+                            types.InlineKeyboardButton("Назад 🔙", callback_data='back'))
+
         await message.answer(name_changed, reply_markup=keyboard_markup)
         await Admin.user_main_info.set()
 
@@ -339,10 +621,10 @@ async def inline_kb_answer_lang_callback_handler(query: types.CallbackQuery, sta
         time_registered = user.created_at.strftime("%d.%m.%Y %H:%M:%S")
         time_updated = user.updated_at.strftime("%d.%m.%Y %H:%M:%S")
 
-        info_a = "ID: %s\nName: %s\nLanguage: %s\nNumber: %s\nUsername: @%s\nOrders number: %s\nReferral link: %s\nCashback: %s\nBanned? %s\nRights: %s\nRegistration date: %s\nLast update date: %s\n\n" % (
+        info_a = "ID: %s\nИмя: %s\nЯзык: %s\nНомер: %s\nИмя пользователя: @%s\nКоличество заказов: %s\nРеферальная ссылка: %s\nКешбек: %s\nЗабанен? %s\nПрава: %s\nДата регистрации: %s\nДата последнего обновления: %s\n\n" % (
             user.id, user.name, user.lang_user, user.number, user.username, user.orders_no, user.referral,
             user.cashback, banned_s, rights_s, time_registered, time_updated)
-        lang_changed = "Language changed to %s for user %s" % (answer_data, user_id)
+        lang_changed = "Язык изменен на %s для пользователя %s" % (answer_data, user_id)
         lang_changed_a = info_a + lang_changed
         if answer_data == 'ru':
             ans = "Ваш язык был изменен на русский"
@@ -352,6 +634,16 @@ async def inline_kb_answer_lang_callback_handler(query: types.CallbackQuery, sta
             ans = "Your language was changed to English"
 
         await dp.bot.send_message(user_id, ans)
+
+        keyboard_markup = types.InlineKeyboardMarkup(row_width=1)
+        keyboard_markup.add(types.InlineKeyboardButton("Изменить имя 📝", callback_data='name'),
+                            types.InlineKeyboardButton("Сменить язык 🗣", callback_data='lang'),
+                            types.InlineKeyboardButton("Сменить номер 📲", callback_data='number'),
+                            types.InlineKeyboardButton("Изменить кешбек 🤑", callback_data='cashback'),
+                            types.InlineKeyboardButton("Бан/Разбан 🟥", callback_data='ban'),
+                            types.InlineKeyboardButton("Изменить права 🪬", callback_data='is_admin'),
+                            types.InlineKeyboardButton("Назад 🔙", callback_data='back'))
+
         await dp.bot.edit_message_text(chat_id=query.from_user.id, message_id=query.message.message_id,
                                        text=lang_changed_a, reply_markup=keyboard_markup)
         await Admin.user_main_info.set()
@@ -379,17 +671,27 @@ async def acp_nn(message: types.Message, state: FSMContext):
             time_registered = user1.created_at.strftime("%d.%m.%Y %H:%M:%S")
             time_updated = user1.updated_at.strftime("%d.%m.%Y %H:%M:%S")
 
-            info_a = "ID: %s\nName: %s\nLanguage: %s\nNumber: %s\nUsername: @%s\nOrders number: %s\nReferral link: %s\nCashback: %s\nBanned? %s\nRights: %s\nRegistration date: %s\nLast update date: %s\n\n" % (
+            info_a = "ID: %s\nИмя: %s\nЯзык: %s\nНомер: %s\nИмя пользователя: @%s\nКоличество заказов: %s\nРеферальная ссылка: %s\nКешбек: %s\nЗабанен? %s\nПрава: %s\nДата регистрации: %s\nДата последнего обновления: %s\n\n" % (
                 user1.id, user1.name, user1.lang_user, user1.number, user1.username, user1.orders_no, user1.referral,
                 user1.cashback, banned_s, rights_s, time_registered, time_updated)
-            number_changed = "Number changed to %s for user %s" % (number, user_id)
+            number_changed = "Номер изменен на %s для пользователя %s" % (number, user_id)
             number_changed_a = info_a + number_changed
-            c_c = "Your number was changed to %s" % number
+            c_c = "Ваш номер был изменен на %s" % number
             await dp.bot.send_message(user_id, c_c)
+
+            keyboard_markup = types.InlineKeyboardMarkup(row_width=1)
+            keyboard_markup.add(types.InlineKeyboardButton("Изменить имя 📝", callback_data='name'),
+                                types.InlineKeyboardButton("Сменить язык 🗣", callback_data='lang'),
+                                types.InlineKeyboardButton("Сменить номер 📲", callback_data='number'),
+                                types.InlineKeyboardButton("Изменить кешбек 🤑", callback_data='cashback'),
+                                types.InlineKeyboardButton("Бан/Разбан 🟥", callback_data='ban'),
+                                types.InlineKeyboardButton("Изменить права 🪬", callback_data='is_admin'),
+                                types.InlineKeyboardButton("Назад 🔙", callback_data='back'))
+
             await message.answer(number_changed_a, reply_markup=keyboard_markup)
             await Admin.user_main_info.set()
     else:
-        await message.answer("Wrong number format.\nPlease enter a number in format +998911234567")
+        await message.answer("Неверный формат.\nПожалуйста введите номер в формате +998911234567")
 
 
 # Изменение кешбека пользователя
@@ -406,17 +708,27 @@ async def acp_cashback(message: types.Message, state: FSMContext):
             banned_s = await quick_commands.check_ban_info(user1.id)
             time_registered = user1.created_at.strftime("%d.%m.%Y %H:%M:%S")
             time_updated = user1.updated_at.strftime("%d.%m.%Y %H:%M:%S")
-            info_a = "ID: %s\nName: %s\nLanguage: %s\nNumber: %s\nUsername: @%s\nOrders number: %s\nReferral link: %s\nCashback: %s\nBanned? %s\nRights: %s\nRegistration date: %s\nLast update date: %s\n\n" % (
+            info_a = "ID: %s\nИмя: %s\nЯзык: %s\nНомер: %s\nИмя пользователя: @%s\nКоличество заказов: %s\nРеферальная ссылка: %s\nКешбек: %s\nЗабанен? %s\nПрава: %s\nДата регистрации: %s\nДата последнего обновления: %s\n\n" % (
                 user1.id, user1.name, user1.lang_user, user1.number, user1.username, user1.orders_no, user1.referral,
                 user1.cashback, banned_s, rights_s, time_registered, time_updated)
-            cashback_changed = "Cashback changed to %s for user %s" % (number, user_id)
+            cashback_changed = "Кешбек изменен на %s для пользователя %s" % (number, user_id)
             cashback_changed_a = info_a + cashback_changed
-            c_c = "Your cashback was changed to %s" % number
+            c_c = "Ваш кешбек изменен на %s" % number
             await dp.bot.send_message(user_id, c_c)
+
+            keyboard_markup = types.InlineKeyboardMarkup(row_width=1)
+            keyboard_markup.add(types.InlineKeyboardButton("Изменить имя 📝", callback_data='name'),
+                                types.InlineKeyboardButton("Сменить язык 🗣", callback_data='lang'),
+                                types.InlineKeyboardButton("Сменить номер 📲", callback_data='number'),
+                                types.InlineKeyboardButton("Изменить кешбек 🤑", callback_data='cashback'),
+                                types.InlineKeyboardButton("Бан/Разбан 🟥", callback_data='ban'),
+                                types.InlineKeyboardButton("Изменить права 🪬", callback_data='is_admin'),
+                                types.InlineKeyboardButton("Назад 🔙", callback_data='back'))
+
             await message.answer(cashback_changed_a, reply_markup=keyboard_markup)
             await Admin.user_main_info.set()
     else:
-        await message.answer("Wrong number format.\nPlease enter a number in digits only")
+        await message.answer("Неверный формат.\nВводите только цифры")
 
 
 # Изменение статуса бана пользователя
@@ -444,13 +756,23 @@ async def inline_kb_answer_lang_callback_handler(query: types.CallbackQuery, sta
         banned_s = await quick_commands.check_ban_info(user.id)
         time_registered = user.created_at.strftime("%d.%m.%Y %H:%M:%S")
         time_updated = user.updated_at.strftime("%d.%m.%Y %H:%M:%S")
-        info_a = "ID: %s\nName: %s\nLanguage: %s\nNumber: %s\nUsername: @%s\nOrders number: %s\nReferral link: %s\nCashback: %s\nBanned? %s\nRights: %s\nRegistration date: %s\nLast update date: %s\n\n" % (
+        info_a = "ID: %s\nИмя: %s\nЯзык: %s\nНомер: %s\nИмя пользователя: @%s\nКоличество заказов: %s\nРеферальная ссылка: %s\nКешбек: %s\nЗабанен? %s\nПрава: %s\nДата регистрации: %s\nДата последнего обновления: %s\n\n" % (
             user.id, user.name, user.lang_user, user.number, user.username, user.orders_no, user.referral,
             user.cashback, banned_s, rights_s, time_registered, time_updated)
-        ban_changed = "Ban status changed to %s for user %s" % (answer_data, user_id)
+        ban_changed = "Статус бана измене на %s для пользователя %s" % (answer_data, user_id)
         ban_changed_a = info_a + ban_changed
-        c_c = "Your ban status was changed to %s" % answer_data
+        c_c = "Ваш статус изменен на %s" % answer_data
         await dp.bot.send_message(user_id, c_c)
+
+        keyboard_markup = types.InlineKeyboardMarkup(row_width=1)
+        keyboard_markup.add(types.InlineKeyboardButton("Изменить имя 📝", callback_data='name'),
+                            types.InlineKeyboardButton("Сменить язык 🗣", callback_data='lang'),
+                            types.InlineKeyboardButton("Сменить номер 📲", callback_data='number'),
+                            types.InlineKeyboardButton("Изменить кешбек 🤑", callback_data='cashback'),
+                            types.InlineKeyboardButton("Бан/Разбан 🟥", callback_data='ban'),
+                            types.InlineKeyboardButton("Изменить права 🪬", callback_data='is_admin'),
+                            types.InlineKeyboardButton("Назад 🔙", callback_data='back'))
+
         await dp.bot.edit_message_text(chat_id=query.from_user.id, message_id=query.message.message_id,
                                        text=ban_changed_a, reply_markup=keyboard_markup)
         await Admin.user_main_info.set()
@@ -470,29 +792,39 @@ async def inline_kb_answer_lang_callback_handler(query: types.CallbackQuery, sta
         kok = ""
         if answer_data == "1":
             await quick_commands.set_rights(user_id, 1)
-            kok = "Admin"
+            kok = "Админ"
         elif answer_data == "2":
             await quick_commands.set_rights(user_id, 2)
-            kok = "Operator"
+            kok = "Оператор"
         elif answer_data == "3":
             await quick_commands.set_rights(user_id, 3)
-            kok = "Courier"
+            kok = "Курьер"
         else:
             await quick_commands.set_rights(user_id, 0)
-            kok = "User"
+            kok = "Пользователь"
 
         user = await quick_commands.select_user(user_id)
         rights_s = await quick_commands.check_rights_info(user.id)
         banned_s = await quick_commands.check_ban_info(user.id)
         time_registered = user.created_at.strftime("%d.%m.%Y %H:%M:%S")
         time_updated = user.updated_at.strftime("%d.%m.%Y %H:%M:%S")
-        info_a = "ID: %s\nName: %s\nLanguage: %s\nNumber: %s\nUsername: @%s\nOrders number: %s\nReferral link: %s\nCashback: %s\nBanned? %s\nRights: %s\nRegistration date: %s\nLast update date: %s\n\n" % (
+        info_a = "ID: %s\nИмя: %s\nЯзык: %s\nНомер: %s\nИмя пользователя: @%s\nКоличество заказов: %s\nРеферальная ссылка: %s\nКешбек: %s\nЗабанен? %s\nПрава: %s\nДата регистрации: %s\nДата последнего обновления: %s\n\n" % (
             user.id, user.name, user.lang_user, user.number, user.username, user.orders_no, user.referral,
             user.cashback, banned_s, rights_s, time_registered, time_updated)
-        rights_changed = "Rights changed to %s for user %s" % (kok, user_id)
+        rights_changed = "Права изменены на %s для пользователя %s" % (kok, user_id)
         rights_changed_a = info_a + rights_changed
-        c_c = "Your rights were changed to %s" % kok
+        c_c = "Ваши права изменены на %s" % kok
         await dp.bot.send_message(user_id, c_c)
+
+        keyboard_markup = types.InlineKeyboardMarkup(row_width=1)
+        keyboard_markup.add(types.InlineKeyboardButton("Изменить имя 📝", callback_data='name'),
+                            types.InlineKeyboardButton("Сменить язык 🗣", callback_data='lang'),
+                            types.InlineKeyboardButton("Сменить номер 📲", callback_data='number'),
+                            types.InlineKeyboardButton("Изменить кешбек 🤑", callback_data='cashback'),
+                            types.InlineKeyboardButton("Бан/Разбан 🟥", callback_data='ban'),
+                            types.InlineKeyboardButton("Изменить права 🪬", callback_data='is_admin'),
+                            types.InlineKeyboardButton("Назад 🔙", callback_data='back'))
+
         await dp.bot.edit_message_text(chat_id=query.from_user.id, message_id=query.message.message_id,
                                        text=rights_changed_a, reply_markup=keyboard_markup)
         await Admin.user_main_info.set()
@@ -585,6 +917,24 @@ async def inline_kb_answer_callback_handler(query: types.CallbackQuery, state: F
             # pass
         elif answer_data == 'back':  # Назад
             await dp.bot.delete_message(query.message.chat.id, query.message.message_id)  # Удаляем сообщение с кнопками
+
+            ac_main = ReplyKeyboardMarkup(
+                keyboard=[
+                    [
+                        KeyboardButton(text="Пользователи 🧑‍🤝‍🧑"),
+                        KeyboardButton(text="Филиалы 🏢"),
+                    ],
+                    [
+                        KeyboardButton(text="Заказы 🛒"),
+                        KeyboardButton(text="Товары 🍽"),
+                    ],
+                    [
+                        KeyboardButton(text="Назад 🔙")
+                    ]
+                ],
+                resize_keyboard=True
+            )
+
             await dp.bot.send_message(query.message.chat.id, "Choose option", reply_markup=ac_main)
             await Admin.a_main.set()
 
@@ -619,6 +969,17 @@ async def process_a_orders_by_branch(query: types.CallbackQuery, state: FSMConte
             count_not_all, count_all)
         txt = koker + text + kikir
         await dp.bot.delete_message(query.message.chat.id, query.message.message_id)  # Удаляем смс
+
+        orders_a = types.InlineKeyboardMarkup(row_width=1)
+        orders_a.row(types.InlineKeyboardButton("Все", callback_data='all'),
+                     types.InlineKeyboardButton("<= Активные", callback_data='all_a'))
+        orders_a.row(types.InlineKeyboardButton("Все по филиалу", callback_data='branch'),
+                     types.InlineKeyboardButton("<= Активные", callback_data='branch_a'))
+        orders_a.row(types.InlineKeyboardButton("Все по id/номеру пользователя", callback_data='num_id'),
+                     types.InlineKeyboardButton("<= Активные", callback_data='num_id_a'))
+        orders_a.row(types.InlineKeyboardButton("Инфо по id заказа", callback_data='num_id_o'))
+        orders_a.row(types.InlineKeyboardButton("Назад", callback_data='back'))
+
         msg = await dp.bot.send_message(query.message.chat.id, txt, reply_markup=orders_a)
         # msg = await message.answer(txt, reply_markup=orders_a)
         await state.update_data(msg_id=msg.message_id)
@@ -680,6 +1041,17 @@ async def process_orders_by_branch(query: types.CallbackQuery, state: FSMContext
             count_not_all, count_all)
         txt = koker + text + kikir
         await dp.bot.delete_message(query.message.chat.id, query.message.message_id)  # Удаляем смс
+
+        orders_a = types.InlineKeyboardMarkup(row_width=1)
+        orders_a.row(types.InlineKeyboardButton("Все", callback_data='all'),
+                     types.InlineKeyboardButton("<= Активные", callback_data='all_a'))
+        orders_a.row(types.InlineKeyboardButton("Все по филиалу", callback_data='branch'),
+                     types.InlineKeyboardButton("<= Активные", callback_data='branch_a'))
+        orders_a.row(types.InlineKeyboardButton("Все по id/номеру пользователя", callback_data='num_id'),
+                     types.InlineKeyboardButton("<= Активные", callback_data='num_id_a'))
+        orders_a.row(types.InlineKeyboardButton("Инфо по id заказа", callback_data='num_id_o'))
+        orders_a.row(types.InlineKeyboardButton("Назад", callback_data='back'))
+
         msg = await dp.bot.send_message(query.message.chat.id, txt, reply_markup=orders_a)
         # msg = await message.answer(txt, reply_markup=orders_a)
         await state.update_data(msg_id=msg.message_id)
@@ -873,6 +1245,19 @@ async def process_order_by_ID(message: types.Message, state: FSMContext):
         txt += "\n<i><b>Статус: %s</b></i>" % status
         # await state.update_data()
 
+        order_info = types.InlineKeyboardMarkup(row_width=1)
+        order_info.row(types.InlineKeyboardButton("Подтвержден ✅", callback_data='confirmed'),
+                       types.InlineKeyboardButton("Приготовление 🍳", callback_data='cooking'))
+        order_info.row(types.InlineKeyboardButton("Доставка 🚚", callback_data='delivery'),
+                       types.InlineKeyboardButton("Доставлен ✔", callback_data='delivered'))
+        order_info.row(types.InlineKeyboardButton("Оплачен 🟩", callback_data='payed'),
+                       types.InlineKeyboardButton("Не оплачен 🟥", callback_data='not_payed'))
+        order_info.row(types.InlineKeyboardButton("Добавить позицию ➕", callback_data='add_pos'),
+                       types.InlineKeyboardButton("Удалить позицию ✖", callback_data='remove_pos'))
+        order_info.row(types.InlineKeyboardButton("Отменить заказ ❌", callback_data='cancel'))
+        order_info.row(types.InlineKeyboardButton("Назначить курьера 🏃‍", callback_data='courier_set'))
+        order_info.row(types.InlineKeyboardButton("Назад 🔙", callback_data='back'))
+
         await dp.bot.send_message(message.from_user.id, txt, parse_mode="HTML", reply_markup=order_info)
 
         await Admin.order_by_ID_action.set()
@@ -919,6 +1304,20 @@ async def process_order_by_ID_action(query: types.CallbackQuery, state: FSMConte
         msg_f_u = msg_f_u % (order_id, status)
         await dp.bot.send_message(order.user_id, msg_f_u, parse_mode="HTML")
         await quick_commands.change_status(order_id, 2)
+
+        order_info = types.InlineKeyboardMarkup(row_width=1)
+        order_info.row(types.InlineKeyboardButton("Подтвержден ✅", callback_data='confirmed'),
+                       types.InlineKeyboardButton("Приготовление 🍳", callback_data='cooking'))
+        order_info.row(types.InlineKeyboardButton("Доставка 🚚", callback_data='delivery'),
+                       types.InlineKeyboardButton("Доставлен ✔", callback_data='delivered'))
+        order_info.row(types.InlineKeyboardButton("Оплачен 🟩", callback_data='payed'),
+                       types.InlineKeyboardButton("Не оплачен 🟥", callback_data='not_payed'))
+        order_info.row(types.InlineKeyboardButton("Добавить позицию ➕", callback_data='add_pos'),
+                       types.InlineKeyboardButton("Удалить позицию ✖", callback_data='remove_pos'))
+        order_info.row(types.InlineKeyboardButton("Отменить заказ ❌", callback_data='cancel'))
+        order_info.row(types.InlineKeyboardButton("Назначить курьера 🏃‍", callback_data='courier_set'))
+        order_info.row(types.InlineKeyboardButton("Назад 🔙", callback_data='back'))
+
         await query.message.edit_text(text, parse_mode="HTML", reply_markup=order_info)
         # pass
     elif query.data == "cooking":
@@ -944,6 +1343,20 @@ async def process_order_by_ID_action(query: types.CallbackQuery, state: FSMConte
         msg_f_u = msg_f_u % (order_id, status)
         await dp.bot.send_message(order.user_id, msg_f_u, parse_mode="HTML")
         await quick_commands.change_status(order_id, 3)
+
+        order_info = types.InlineKeyboardMarkup(row_width=1)
+        order_info.row(types.InlineKeyboardButton("Подтвержден ✅", callback_data='confirmed'),
+                       types.InlineKeyboardButton("Приготовление 🍳", callback_data='cooking'))
+        order_info.row(types.InlineKeyboardButton("Доставка 🚚", callback_data='delivery'),
+                       types.InlineKeyboardButton("Доставлен ✔", callback_data='delivered'))
+        order_info.row(types.InlineKeyboardButton("Оплачен 🟩", callback_data='payed'),
+                       types.InlineKeyboardButton("Не оплачен 🟥", callback_data='not_payed'))
+        order_info.row(types.InlineKeyboardButton("Добавить позицию ➕", callback_data='add_pos'),
+                       types.InlineKeyboardButton("Удалить позицию ✖", callback_data='remove_pos'))
+        order_info.row(types.InlineKeyboardButton("Отменить заказ ❌", callback_data='cancel'))
+        order_info.row(types.InlineKeyboardButton("Назначить курьера 🏃‍", callback_data='courier_set'))
+        order_info.row(types.InlineKeyboardButton("Назад 🔙", callback_data='back'))
+
         await query.message.edit_text(text, parse_mode="HTML", reply_markup=order_info)
     elif query.data == "delivery":
         text = ""
@@ -965,6 +1378,20 @@ async def process_order_by_ID_action(query: types.CallbackQuery, state: FSMConte
         msg_f_u = msg_f_u % (order_id, status)
         await dp.bot.send_message(order.user_id, msg_f_u, parse_mode="HTML")
         await quick_commands.change_status(order_id, 4)
+
+        order_info = types.InlineKeyboardMarkup(row_width=1)
+        order_info.row(types.InlineKeyboardButton("Подтвержден ✅", callback_data='confirmed'),
+                       types.InlineKeyboardButton("Приготовление 🍳", callback_data='cooking'))
+        order_info.row(types.InlineKeyboardButton("Доставка 🚚", callback_data='delivery'),
+                       types.InlineKeyboardButton("Доставлен ✔", callback_data='delivered'))
+        order_info.row(types.InlineKeyboardButton("Оплачен 🟩", callback_data='payed'),
+                       types.InlineKeyboardButton("Не оплачен 🟥", callback_data='not_payed'))
+        order_info.row(types.InlineKeyboardButton("Добавить позицию ➕", callback_data='add_pos'),
+                       types.InlineKeyboardButton("Удалить позицию ✖", callback_data='remove_pos'))
+        order_info.row(types.InlineKeyboardButton("Отменить заказ ❌", callback_data='cancel'))
+        order_info.row(types.InlineKeyboardButton("Назначить курьера 🏃‍", callback_data='courier_set'))
+        order_info.row(types.InlineKeyboardButton("Назад 🔙", callback_data='back'))
+
         await query.message.edit_text(text, parse_mode="HTML", reply_markup=order_info)
     elif query.data == "delivered":
         text = ""
@@ -987,6 +1414,20 @@ async def process_order_by_ID_action(query: types.CallbackQuery, state: FSMConte
         await dp.bot.send_message(order.user_id, msg_f_u, parse_mode="HTML")
         # await quick_commands.add_order_to_user(order.user_id)
         await quick_commands.change_status(order_id, 5)
+
+        order_info = types.InlineKeyboardMarkup(row_width=1)
+        order_info.row(types.InlineKeyboardButton("Подтвержден ✅", callback_data='confirmed'),
+                       types.InlineKeyboardButton("Приготовление 🍳", callback_data='cooking'))
+        order_info.row(types.InlineKeyboardButton("Доставка 🚚", callback_data='delivery'),
+                       types.InlineKeyboardButton("Доставлен ✔", callback_data='delivered'))
+        order_info.row(types.InlineKeyboardButton("Оплачен 🟩", callback_data='payed'),
+                       types.InlineKeyboardButton("Не оплачен 🟥", callback_data='not_payed'))
+        order_info.row(types.InlineKeyboardButton("Добавить позицию ➕", callback_data='add_pos'),
+                       types.InlineKeyboardButton("Удалить позицию ✖", callback_data='remove_pos'))
+        order_info.row(types.InlineKeyboardButton("Отменить заказ ❌", callback_data='cancel'))
+        order_info.row(types.InlineKeyboardButton("Назначить курьера 🏃‍", callback_data='courier_set'))
+        order_info.row(types.InlineKeyboardButton("Назад 🔙", callback_data='back'))
+
         await query.message.edit_text(text, parse_mode="HTML", reply_markup=order_info)
     elif query.data == "payed":
         text = ""
@@ -1019,6 +1460,20 @@ async def process_order_by_ID_action(query: types.CallbackQuery, state: FSMConte
             # (1 = активный, 2 = подтвержден, 3 = приготовление, 4 = доставка, 5 = доставлен, 6 = отменен)
             txt += "\n<i><b>Статус: %s</b></i>" % status
             txt += "\n\n\n<i>Статус оплаты заказа изменен на <b>%s</b></i>" % status_o
+
+            order_info = types.InlineKeyboardMarkup(row_width=1)
+            order_info.row(types.InlineKeyboardButton("Подтвержден ✅", callback_data='confirmed'),
+                           types.InlineKeyboardButton("Приготовление 🍳", callback_data='cooking'))
+            order_info.row(types.InlineKeyboardButton("Доставка 🚚", callback_data='delivery'),
+                           types.InlineKeyboardButton("Доставлен ✔", callback_data='delivered'))
+            order_info.row(types.InlineKeyboardButton("Оплачен 🟩", callback_data='payed'),
+                           types.InlineKeyboardButton("Не оплачен 🟥", callback_data='not_payed'))
+            order_info.row(types.InlineKeyboardButton("Добавить позицию ➕", callback_data='add_pos'),
+                           types.InlineKeyboardButton("Удалить позицию ✖", callback_data='remove_pos'))
+            order_info.row(types.InlineKeyboardButton("Отменить заказ ❌", callback_data='cancel'))
+            order_info.row(types.InlineKeyboardButton("Назначить курьера 🏃‍", callback_data='courier_set'))
+            order_info.row(types.InlineKeyboardButton("Назад 🔙", callback_data='back'))
+
             await query.message.edit_text(txt, parse_mode="HTML", reply_markup=order_info)
             # await dp.bot.send_message(message.from_user.id, txt, parse_mode="HTML", reply_markup=order_info)
 
@@ -1060,6 +1515,20 @@ async def process_order_by_ID_action(query: types.CallbackQuery, state: FSMConte
             # (1 = активный, 2 = подтвержден, 3 = приготовление, 4 = доставка, 5 = доставлен, 6 = отменен)
             txt += "\n<i><b>Статус: %s</b></i>" % status
             txt += "\n\n\n<i>Статус оплаты заказа изменен на <b>%s</b></i>" % status_o
+
+            order_info = types.InlineKeyboardMarkup(row_width=1)
+            order_info.row(types.InlineKeyboardButton("Подтвержден ✅", callback_data='confirmed'),
+                           types.InlineKeyboardButton("Приготовление 🍳", callback_data='cooking'))
+            order_info.row(types.InlineKeyboardButton("Доставка 🚚", callback_data='delivery'),
+                           types.InlineKeyboardButton("Доставлен ✔", callback_data='delivered'))
+            order_info.row(types.InlineKeyboardButton("Оплачен 🟩", callback_data='payed'),
+                           types.InlineKeyboardButton("Не оплачен 🟥", callback_data='not_payed'))
+            order_info.row(types.InlineKeyboardButton("Добавить позицию ➕", callback_data='add_pos'),
+                           types.InlineKeyboardButton("Удалить позицию ✖", callback_data='remove_pos'))
+            order_info.row(types.InlineKeyboardButton("Отменить заказ ❌", callback_data='cancel'))
+            order_info.row(types.InlineKeyboardButton("Назначить курьера 🏃‍", callback_data='courier_set'))
+            order_info.row(types.InlineKeyboardButton("Назад 🔙", callback_data='back'))
+
             await query.message.edit_text(txt, parse_mode="HTML", reply_markup=order_info)
             await dp.bot.answer_callback_query(query.id, "koker", show_alert=True)
             # await dp.bot.send_message(message.from_user.id, txt, parse_mode="HTML", reply_markup=order_info)
@@ -1187,6 +1656,20 @@ async def process_order_by_ID_action(query: types.CallbackQuery, state: FSMConte
         else:
             tix_t = "Невозможно назначить курьера на самовывоз\n\n"
             text += tix_t
+
+            order_info = types.InlineKeyboardMarkup(row_width=1)
+            order_info.row(types.InlineKeyboardButton("Подтвержден ✅", callback_data='confirmed'),
+                           types.InlineKeyboardButton("Приготовление 🍳", callback_data='cooking'))
+            order_info.row(types.InlineKeyboardButton("Доставка 🚚", callback_data='delivery'),
+                           types.InlineKeyboardButton("Доставлен ✔", callback_data='delivered'))
+            order_info.row(types.InlineKeyboardButton("Оплачен 🟩", callback_data='payed'),
+                           types.InlineKeyboardButton("Не оплачен 🟥", callback_data='not_payed'))
+            order_info.row(types.InlineKeyboardButton("Добавить позицию ➕", callback_data='add_pos'),
+                           types.InlineKeyboardButton("Удалить позицию ✖", callback_data='remove_pos'))
+            order_info.row(types.InlineKeyboardButton("Отменить заказ ❌", callback_data='cancel'))
+            order_info.row(types.InlineKeyboardButton("Назначить курьера 🏃‍", callback_data='courier_set'))
+            order_info.row(types.InlineKeyboardButton("Назад 🔙", callback_data='back'))
+
             await query.message.edit_text(text, parse_mode="HTML", reply_markup=order_info)
     elif query.data == "cancel":
         text = ""
@@ -1202,6 +1685,20 @@ async def process_order_by_ID_action(query: types.CallbackQuery, state: FSMConte
             msg_f_u = "Ваш заказ №%s отменен" % order_id
             await dp.bot.send_message(order.user_id, msg_f_u, parse_mode="HTML")
         await quick_commands.change_status(order_id, 6)
+
+        order_info = types.InlineKeyboardMarkup(row_width=1)
+        order_info.row(types.InlineKeyboardButton("Подтвержден ✅", callback_data='confirmed'),
+                       types.InlineKeyboardButton("Приготовление 🍳", callback_data='cooking'))
+        order_info.row(types.InlineKeyboardButton("Доставка 🚚", callback_data='delivery'),
+                       types.InlineKeyboardButton("Доставлен ✔", callback_data='delivered'))
+        order_info.row(types.InlineKeyboardButton("Оплачен 🟩", callback_data='payed'),
+                       types.InlineKeyboardButton("Не оплачен 🟥", callback_data='not_payed'))
+        order_info.row(types.InlineKeyboardButton("Добавить позицию ➕", callback_data='add_pos'),
+                       types.InlineKeyboardButton("Удалить позицию ✖", callback_data='remove_pos'))
+        order_info.row(types.InlineKeyboardButton("Отменить заказ ❌", callback_data='cancel'))
+        order_info.row(types.InlineKeyboardButton("Назначить курьера 🏃‍", callback_data='courier_set'))
+        order_info.row(types.InlineKeyboardButton("Назад 🔙", callback_data='back'))
+
         await query.message.edit_text(text, parse_mode="HTML", reply_markup=order_info)
     elif query.data == "back":
         await query.message.delete()
@@ -1229,6 +1726,17 @@ async def process_order_by_ID_action(query: types.CallbackQuery, state: FSMConte
         txt = koker + text + kikir
         lilo = await dp.bot.send_message(query.from_user.id, "Загрузка...", reply_markup=ReplyKeyboardRemove())
         await lilo.delete()
+
+        orders_a = types.InlineKeyboardMarkup(row_width=1)
+        orders_a.row(types.InlineKeyboardButton("Все", callback_data='all'),
+                     types.InlineKeyboardButton("<= Активные", callback_data='all_a'))
+        orders_a.row(types.InlineKeyboardButton("Все по филиалу", callback_data='branch'),
+                     types.InlineKeyboardButton("<= Активные", callback_data='branch_a'))
+        orders_a.row(types.InlineKeyboardButton("Все по id/номеру пользователя", callback_data='num_id'),
+                     types.InlineKeyboardButton("<= Активные", callback_data='num_id_a'))
+        orders_a.row(types.InlineKeyboardButton("Инфо по id заказа", callback_data='num_id_o'))
+        orders_a.row(types.InlineKeyboardButton("Назад", callback_data='back'))
+
         msg = await dp.bot.send_message(query.from_user.id, txt, parse_mode="HTML", reply_markup=orders_a)
         #  msg = await message.answer(txt, reply_markup=orders_a)
         await state.update_data(msg_id=msg.message_id)
@@ -1277,6 +1785,34 @@ async def process_order_add_action(query: types.CallbackQuery, state: FSMContext
         text = txt + toxt
         tix_t = "Выбран товар: <b>%s</b>. \nВыберите количество из списка ниже.\n\n" % item_name
         text += tix_t
+
+        order_by_id_quantity = types.InlineKeyboardMarkup(row_width=5)
+        order_by_id_quantity.add(types.InlineKeyboardButton("1", callback_data="1"),
+                                 types.InlineKeyboardButton("2", callback_data="2"),
+                                 types.InlineKeyboardButton("3", callback_data='3'),
+                                 types.InlineKeyboardButton("4", callback_data='4'),
+                                 types.InlineKeyboardButton("5", callback_data='5'))
+        order_by_id_quantity.add(types.InlineKeyboardButton("6", callback_data="6"),
+                                 types.InlineKeyboardButton("7", callback_data="7"),
+                                 types.InlineKeyboardButton("8", callback_data='8'),
+                                 types.InlineKeyboardButton("9", callback_data='9'),
+                                 types.InlineKeyboardButton("10", callback_data='10'))
+        order_by_id_quantity.add(types.InlineKeyboardButton("11", callback_data="11"),
+                                 types.InlineKeyboardButton("12", callback_data="12"),
+                                 types.InlineKeyboardButton("13", callback_data='13'),
+                                 types.InlineKeyboardButton("14", callback_data='14'),
+                                 types.InlineKeyboardButton("15", callback_data='15'))
+        order_by_id_quantity.add(types.InlineKeyboardButton("16", callback_data="16"),
+                                 types.InlineKeyboardButton("17", callback_data="17"),
+                                 types.InlineKeyboardButton("18", callback_data='18'),
+                                 types.InlineKeyboardButton("19", callback_data='19'),
+                                 types.InlineKeyboardButton("20", callback_data='20'))
+        order_by_id_quantity.add(types.InlineKeyboardButton("21", callback_data="21"),
+                                 types.InlineKeyboardButton("22", callback_data="22"),
+                                 types.InlineKeyboardButton("23", callback_data='23'),
+                                 types.InlineKeyboardButton("24", callback_data='24'),
+                                 types.InlineKeyboardButton("25", callback_data='25'))
+
         await query.message.edit_text(text, parse_mode="HTML", reply_markup=order_by_id_quantity)
         await Admin.order_add_item_quantity.set()
 
@@ -1401,6 +1937,20 @@ async def process_order_item_action(query: types.CallbackQuery, state: FSMContex
             # await state.update_data()
             txt += "\n\n<b>Товар: <i>%s %sшт</i> добавлен в корзину.\n\n\nВыберите действие</b>"
             txt = txt % (item_name, query.data)
+
+            order_info = types.InlineKeyboardMarkup(row_width=1)
+            order_info.row(types.InlineKeyboardButton("Подтвержден ✅", callback_data='confirmed'),
+                           types.InlineKeyboardButton("Приготовление 🍳", callback_data='cooking'))
+            order_info.row(types.InlineKeyboardButton("Доставка 🚚", callback_data='delivery'),
+                           types.InlineKeyboardButton("Доставлен ✔", callback_data='delivered'))
+            order_info.row(types.InlineKeyboardButton("Оплачен 🟩", callback_data='payed'),
+                           types.InlineKeyboardButton("Не оплачен 🟥", callback_data='not_payed'))
+            order_info.row(types.InlineKeyboardButton("Добавить позицию ➕", callback_data='add_pos'),
+                           types.InlineKeyboardButton("Удалить позицию ✖", callback_data='remove_pos'))
+            order_info.row(types.InlineKeyboardButton("Отменить заказ ❌", callback_data='cancel'))
+            order_info.row(types.InlineKeyboardButton("Назначить курьера 🏃‍", callback_data='courier_set'))
+            order_info.row(types.InlineKeyboardButton("Назад 🔙", callback_data='back'))
+
             await query.message.edit_text(txt, parse_mode="HTML", reply_markup=order_info)
             # await dp.bot.send_message(message.from_user.id, txt, parse_mode="HTML", reply_markup=order_info)
 
@@ -1464,6 +2014,20 @@ async def process_order_itemr_action(query: types.CallbackQuery, state: FSMConte
             # await state.update_data()
             txt += "\n\n<b>Товар: <i>%s %sшт</i> удален из корзины.\n\n\nВыберите действие</b>"
             txt = txt % (item_name, query.data)
+
+            order_info = types.InlineKeyboardMarkup(row_width=1)
+            order_info.row(types.InlineKeyboardButton("Подтвержден ✅", callback_data='confirmed'),
+                           types.InlineKeyboardButton("Приготовление 🍳", callback_data='cooking'))
+            order_info.row(types.InlineKeyboardButton("Доставка 🚚", callback_data='delivery'),
+                           types.InlineKeyboardButton("Доставлен ✔", callback_data='delivered'))
+            order_info.row(types.InlineKeyboardButton("Оплачен 🟩", callback_data='payed'),
+                           types.InlineKeyboardButton("Не оплачен 🟥", callback_data='not_payed'))
+            order_info.row(types.InlineKeyboardButton("Добавить позицию ➕", callback_data='add_pos'),
+                           types.InlineKeyboardButton("Удалить позицию ✖", callback_data='remove_pos'))
+            order_info.row(types.InlineKeyboardButton("Отменить заказ ❌", callback_data='cancel'))
+            order_info.row(types.InlineKeyboardButton("Назначить курьера 🏃‍", callback_data='courier_set'))
+            order_info.row(types.InlineKeyboardButton("Назад 🔙", callback_data='back'))
+
             await query.message.edit_text(txt, parse_mode="HTML", reply_markup=order_info)
             # await dp.bot.send_message(message.from_user.id, txt, parse_mode="HTML", reply_markup=order_info)
 
@@ -1513,6 +2077,20 @@ async def process_order_add_action(query: types.CallbackQuery, state: FSMContext
 
         # await query.message.edit_reply_markup(reply_markup=items_keyboard)
         await dp.bot.send_message(order.user_id, us_t, parse_mode="HTML")
+
+        order_info = types.InlineKeyboardMarkup(row_width=1)
+        order_info.row(types.InlineKeyboardButton("Подтвержден ✅", callback_data='confirmed'),
+                       types.InlineKeyboardButton("Приготовление 🍳", callback_data='cooking'))
+        order_info.row(types.InlineKeyboardButton("Доставка 🚚", callback_data='delivery'),
+                       types.InlineKeyboardButton("Доставлен ✔", callback_data='delivered'))
+        order_info.row(types.InlineKeyboardButton("Оплачен 🟩", callback_data='payed'),
+                       types.InlineKeyboardButton("Не оплачен 🟥", callback_data='not_payed'))
+        order_info.row(types.InlineKeyboardButton("Добавить позицию ➕", callback_data='add_pos'),
+                       types.InlineKeyboardButton("Удалить позицию ✖", callback_data='remove_pos'))
+        order_info.row(types.InlineKeyboardButton("Отменить заказ ❌", callback_data='cancel'))
+        order_info.row(types.InlineKeyboardButton("Назначить курьера 🏃‍", callback_data='courier_set'))
+        order_info.row(types.InlineKeyboardButton("Назад 🔙", callback_data='back'))
+
         await dp.bot.send_message(courier_int, cour_txt, parse_mode="HTML", reply_markup=order_info)
         await query.message.edit_text(text, parse_mode="HTML", reply_markup=order_info)
         await Admin.order_by_ID_action.set()
@@ -1539,6 +2117,20 @@ async def process_order_add_action(query: types.CallbackQuery, state: FSMContext
         # print(order.items)
 
         # await query.message.edit_reply_markup(reply_markup=items_keyboard)
+
+        order_info = types.InlineKeyboardMarkup(row_width=1)
+        order_info.row(types.InlineKeyboardButton("Подтвержден ✅", callback_data='confirmed'),
+                       types.InlineKeyboardButton("Приготовление 🍳", callback_data='cooking'))
+        order_info.row(types.InlineKeyboardButton("Доставка 🚚", callback_data='delivery'),
+                       types.InlineKeyboardButton("Доставлен ✔", callback_data='delivered'))
+        order_info.row(types.InlineKeyboardButton("Оплачен 🟩", callback_data='payed'),
+                       types.InlineKeyboardButton("Не оплачен 🟥", callback_data='not_payed'))
+        order_info.row(types.InlineKeyboardButton("Добавить позицию ➕", callback_data='add_pos'),
+                       types.InlineKeyboardButton("Удалить позицию ✖", callback_data='remove_pos'))
+        order_info.row(types.InlineKeyboardButton("Отменить заказ ❌", callback_data='cancel'))
+        order_info.row(types.InlineKeyboardButton("Назначить курьера 🏃‍", callback_data='courier_set'))
+        order_info.row(types.InlineKeyboardButton("Назад 🔙", callback_data='back'))
+
         await query.message.edit_text(text, parse_mode="HTML", reply_markup=order_info)
         await Admin.order_by_ID_action.set()
 
@@ -1569,6 +2161,17 @@ async def process_call_orders(query: types.CallbackQuery, state: FSMContext):
             count_not_all, count_all)
         txt = koker + text + kikir
         await dp.bot.delete_message(query.message.chat.id, query.message.message_id)  # Удаляем смс
+
+        orders_a = types.InlineKeyboardMarkup(row_width=1)
+        orders_a.row(types.InlineKeyboardButton("Все", callback_data='all'),
+                     types.InlineKeyboardButton("<= Активные", callback_data='all_a'))
+        orders_a.row(types.InlineKeyboardButton("Все по филиалу", callback_data='branch'),
+                     types.InlineKeyboardButton("<= Активные", callback_data='branch_a'))
+        orders_a.row(types.InlineKeyboardButton("Все по id/номеру пользователя", callback_data='num_id'),
+                     types.InlineKeyboardButton("<= Активные", callback_data='num_id_a'))
+        orders_a.row(types.InlineKeyboardButton("Инфо по id заказа", callback_data='num_id_o'))
+        orders_a.row(types.InlineKeyboardButton("Назад", callback_data='back'))
+
         msg = await dp.bot.send_message(query.message.chat.id, txt, reply_markup=orders_a)
         # msg = await message.answer(txt, reply_markup=orders_a)
         await state.update_data(msg_id=msg.message_id)
@@ -1600,6 +2203,20 @@ async def process_call_orders(query: types.CallbackQuery, state: FSMContext):
         txt += "\n<i><b>Статус: %s</b></i>" % status
         # await state.update_data()
         await query.message.delete()
+
+        order_info = types.InlineKeyboardMarkup(row_width=1)
+        order_info.row(types.InlineKeyboardButton("Подтвержден ✅", callback_data='confirmed'),
+                       types.InlineKeyboardButton("Приготовление 🍳", callback_data='cooking'))
+        order_info.row(types.InlineKeyboardButton("Доставка 🚚", callback_data='delivery'),
+                       types.InlineKeyboardButton("Доставлен ✔", callback_data='delivered'))
+        order_info.row(types.InlineKeyboardButton("Оплачен 🟩", callback_data='payed'),
+                       types.InlineKeyboardButton("Не оплачен 🟥", callback_data='not_payed'))
+        order_info.row(types.InlineKeyboardButton("Добавить позицию ➕", callback_data='add_pos'),
+                       types.InlineKeyboardButton("Удалить позицию ✖", callback_data='remove_pos'))
+        order_info.row(types.InlineKeyboardButton("Отменить заказ ❌", callback_data='cancel'))
+        order_info.row(types.InlineKeyboardButton("Назначить курьера 🏃‍", callback_data='courier_set'))
+        order_info.row(types.InlineKeyboardButton("Назад 🔙", callback_data='back'))
+
         await dp.bot.send_message(user_id, txt, parse_mode="HTML", reply_markup=order_info)
 
         await Admin.order_by_ID_action.set()

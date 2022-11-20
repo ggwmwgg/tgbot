@@ -1,23 +1,11 @@
 from aiogram import types
 from aiogram.dispatcher import FSMContext
-from aiogram.dispatcher.filters.builtin import Text, Command
 from aiogram.types import ReplyKeyboardRemove, ReplyKeyboardMarkup, KeyboardButton
-
-
-from keyboards.default import location, d_or_d, yes_no, main_menu, delivery_yes_no, languages, quantity
 from loader import dp
-from states.orders import Order, Reg
+from states.orders import Order
 from utils.db_api import quick_commands
-from keyboards.inline import no_comm, payment_type, conf
-from data import lang_en
 from data.config import cashback as cb
-# import os
-# from dotenv import load_dotenv
-# from twilio.rest import Client
-# from random import randint
-# from utils.db_api.models import User
 from utils.misc import rate_limit, get_address_from_coords
-lang = ""
 
 
 # Корзина тест
@@ -28,8 +16,8 @@ lang = ""
 
 
 # Начало оформления заказа
+@rate_limit(1, key="cart")
 async def start_order(message: types.Message, state: FSMContext):
-    global lang
     id = message.from_user.id
 
     lang = await quick_commands.select_language(id)
@@ -39,11 +27,35 @@ async def start_order(message: types.Message, state: FSMContext):
 
         lil = await message.answer(text="Загрузка заказа", parse_mode="HTML", reply_markup=ReplyKeyboardRemove())
         await lil.delete()
-        lul = await message.answer("Добавьте комментарий к вашему заказу\nИли нажмите на соответствующую кнопку\n", reply_markup=no_comm)
+
+        no_comm = types.InlineKeyboardMarkup(row_width=1, one_time_keyboard=True)
+        no_comm.add(types.InlineKeyboardButton("Нет комментариев 💭", callback_data='no_comm'),
+                    types.InlineKeyboardButton("Назад 🔙", callback_data='back'))
+
+        text = "Добавьте комментарий к вашему заказу\nИли нажмите на соответствующую кнопку\n"
+        lul = await message.answer(text, reply_markup=no_comm)
         msg = lul['message_id']
         await state.update_data(msg_id=msg)
         await Order.menu_confirm.set()
     else:
+
+        main_menu = ReplyKeyboardMarkup(
+            keyboard=[
+                [
+                    KeyboardButton(text="Начать заказ 🍽"),
+                ],
+                [
+                    KeyboardButton(text="Оставить отзыв 📝"),
+                    KeyboardButton(text="Мои заказы 🛒")
+                ],
+                [
+                    KeyboardButton(text="Контакты 📲"),
+                    KeyboardButton(text="Настройки 🛠")
+                ]
+            ],
+            resize_keyboard=True
+        )
+
         await message.answer("Ваша корзина пуста", reply_markup=main_menu)
         cats = await quick_commands.get_categories(lang)
         cat_lan = ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True, row_width=2).add(
@@ -52,35 +64,28 @@ async def start_order(message: types.Message, state: FSMContext):
         await Order.menu.set()
 
 
-
-# @dp.callback_query_handler(state=Order.menu_add_comment)
-# async def comment_comm_msg_e(message: types.Message, state: FSMContext):
-#     global lang
-#     id = message.from_user.id
-#     lang = await quick_commands.select_language(id)
-#     await message.answer("Koker")
-
-
 # Функция для нажатия на кнопку нет комментариев и назад
 @dp.callback_query_handler(state=Order.menu_confirm)
 async def comment_order_query(query: types.CallbackQuery, state: FSMContext):
     global lang
     id = query.from_user.id
     lang = await quick_commands.select_language(id)
-    #async with state.proxy() as data:
-        #msg_id = data['msg_id']
+
+
     if query.data == "no_comm":
         text = "<b>Напишите комментарий к заказу:</b>\n\nКомментариев не добавлено"
         await query.message.edit_text(text=text, parse_mode="HTML", reply_markup=None)
-        #await query.message.delete()
-        #await dp.bot.send_message(chat_id=id, text=text, parse_mode="HTML", reply_markup=None)
-        # await query.message.delete()
+
+        payment_type = types.InlineKeyboardMarkup(row_width=1, one_time_keyboard=True)
+        payment_type.add(types.InlineKeyboardButton("Наличные 💵", callback_data='cash'),
+                         types.InlineKeyboardButton("Click 💸", callback_data='click'),
+                         types.InlineKeyboardButton("Payme 💸", callback_data='payme'),
+                         types.InlineKeyboardButton("Назад 🔙", callback_data='back'))
+
         lilo = await dp.bot.send_message(chat_id=id, text="<b>Выберите способ оплаты:</b>", parse_mode="HTML", reply_markup=payment_type)
         await state.update_data(msg_id=lilo['message_id'])
         await Order.menu_confirm_payment.set()
     elif query.data == "back":
-        # print(query)
-        # print(query.message)
 
         text = "<b>Напишите комментарий к заказу\n</b>"
         await dp.bot.delete_message(chat_id=id, message_id=query.message.message_id)
@@ -101,14 +106,19 @@ async def comment_comm_msg(message: types.Message, state: FSMContext):
         msg_id = data['msg_id']
         # print(msg_id)
     await dp.bot.edit_message_text(chat_id=id, message_id=msg_id, text="<b>Комментарий:</b>\n\n", parse_mode="HTML")
+
+    payment_type = types.InlineKeyboardMarkup(row_width=1, one_time_keyboard=True)
+    payment_type.add(types.InlineKeyboardButton("Наличные 💵", callback_data='cash'),
+                     types.InlineKeyboardButton("Click 💸", callback_data='click'),
+                     types.InlineKeyboardButton("Payme 💸", callback_data='payme'),
+                     types.InlineKeyboardButton("Назад 🔙", callback_data='back'))
+
     lilo = await message.answer(text="<b>Выберите способ оплаты:</b>", parse_mode="HTML", reply_markup=payment_type)
     await state.update_data(msg_id=lilo['message_id'])
     await Order.menu_confirm_payment.set()
 
 
-
-
-# Обработка способов оплаты (Выбран Payme,Click,Cash) и вывод списка товаров в корзине
+# Обработка способов оплаты (Выбран Payme, Click, Cash) и вывод списка товаров в корзине
 # Функция для нажатия на кнопку нет комментариев и назад
 @dp.callback_query_handler(state=Order.menu_confirm_payment)
 async def payment_order_query(query: types.CallbackQuery, state: FSMContext):
@@ -182,6 +192,11 @@ async def payment_order_query(query: types.CallbackQuery, state: FSMContext):
     if query.data == "cash":
         await query.message.edit_text(text_edit, parse_mode="html")
         # await dp.bot.edit_message_text(chat_id=id, message_id=msg_id, text=text_edit, parse_mode="HTML")
+
+        conf = types.InlineKeyboardMarkup(row_width=1, one_time_keyboard=True)
+        conf.add(types.InlineKeyboardButton("Подтверждаю ✔", callback_data='yes'),
+                 types.InlineKeyboardButton("Отменить ✖", callback_data='no'))
+
         lilo = await dp.bot.send_message(chat_id=id, text=text, reply_markup=conf)
         await state.update_data(msg_id=lilo['message_id'])
         await state.update_data(type=type)
@@ -198,11 +213,33 @@ async def payment_order_query(query: types.CallbackQuery, state: FSMContext):
         await query.message.delete()
         if await quick_commands.select_cart(id):
 
-            lul = await dp.bot.send_message(chat_id=id, text="Добавьте комментарий к вашему заказу\nИли нажмите на соответствующую кнопку\n",
+            no_comm = types.InlineKeyboardMarkup(row_width=1, one_time_keyboard=True)
+            no_comm.add(types.InlineKeyboardButton("Нет комментариев 💭", callback_data='no_comm'),
+                        types.InlineKeyboardButton("Назад 🔙", callback_data='back'))
+
+            text = "Добавьте комментарий к вашему заказу\nИли нажмите на соответствующую кнопку\n"
+            lul = await dp.bot.send_message(chat_id=id, text=text,
                                        reply_markup=no_comm)
             await state.update_data(msg_id=lul['message_id'])
             await Order.menu_confirm.set()
         else:
+
+            main_menu = ReplyKeyboardMarkup(
+                keyboard=[
+                    [
+                        KeyboardButton(text="Начать заказ 🍽"),
+                    ],
+                    [
+                        KeyboardButton(text="Оставить отзыв 📝"),
+                        KeyboardButton(text="Мои заказы 🛒")
+                    ],
+                    [
+                        KeyboardButton(text="Контакты 📲"),
+                        KeyboardButton(text="Настройки 🛠")
+                    ]
+                ],
+                resize_keyboard=True
+            )
 
             await dp.bot.send_message(chat_id=id, text="Ваша корзина пуста", reply_markup=main_menu)
             cats = await quick_commands.get_categories(lang)
@@ -249,6 +286,24 @@ async def menu_confirmed(query: types.CallbackQuery, state: FSMContext):
                 await dp.bot.send_message(chat_id=i, text=for_admins)
             await quick_commands.clear_cart_by_user_id(id)
             await query.message.delete()
+
+            main_menu = ReplyKeyboardMarkup(
+                keyboard=[
+                    [
+                        KeyboardButton(text="Начать заказ 🍽"),
+                    ],
+                    [
+                        KeyboardButton(text="Оставить отзыв 📝"),
+                        KeyboardButton(text="Мои заказы 🛒")
+                    ],
+                    [
+                        KeyboardButton(text="Контакты 📲"),
+                        KeyboardButton(text="Настройки 🛠")
+                    ]
+                ],
+                resize_keyboard=True
+            )
+
             await dp.bot.send_message(chat_id=id, text=txt, parse_mode="HTML", reply_markup=main_menu)
             await state.finish()
         if type == "Click":
@@ -258,7 +313,13 @@ async def menu_confirmed(query: types.CallbackQuery, state: FSMContext):
 
     elif query.data == "no":
         await query.message.delete()
-        # await dp.bot.delete_message(chat_id=id, message_id=msg_id)
+
+        payment_type = types.InlineKeyboardMarkup(row_width=1, one_time_keyboard=True)
+        payment_type.add(types.InlineKeyboardButton("Наличные 💵", callback_data='cash'),
+                         types.InlineKeyboardButton("Click 💸", callback_data='click'),
+                         types.InlineKeyboardButton("Payme 💸", callback_data='payme'),
+                         types.InlineKeyboardButton("Назад 🔙", callback_data='back'))
+
         lilo = await dp.bot.send_message(chat_id=id, text="<b>Выберите способ оплаты:</b>", parse_mode="HTML", reply_markup=payment_type)
         await state.update_data(msg_id=lilo['message_id'])
         await Order.menu_confirm_payment.set()

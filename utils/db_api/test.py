@@ -42,76 +42,7 @@ async def test():
     count_users = await quick_commands.count_users()
     print(f"Всего пользователей: {count_users}")
 
-    # async def add_order(user_id: int, p_type: str, list: dict, price: int, type_delivery: int, location: dict, branch: str)
-    # await quick_commands.add_order(user_id, p_type, items, comment, total_price, delivery_price, cashback, type_delivery, is_paid, lon, lat, branch)
-
-
-
-
-    user_id = 33180657
-    # id = 456954476
-    # user = await quick_commands.select_user(id)
-    lang = "ru"
-    id = "1"
-    id = int(id)
-    order = await quick_commands.select_order_by_id(id)
-    txt = "<b>Заказ №%s</b>\n\n" % order.id
-    type = ""
-    kok = ""
-    if order.type_delivery == 1:  # Если доставка
-        type = "Доставка"
-        coords = f"{order.lon},{order.lat}"
-        print(coords)
-        adress = get_address_from_coords(coords)
-        kok = "Адрес: %s" % adress[21:]
-    elif order.type_delivery == 2:  # Если самовывоз
-        type = "Самовывоз"
-        kok = "Филиал: %s" % order.branch
-
-    txt += "Тип : %s\n%s\n" % (type, kok)
-    number = await quick_commands.select_number(order.user_id)
-    txt += "Телефон: %s\nСпособ оплаты: %s\n" % (number, order.p_type)
-    if order.comment != "Null":
-        txt += "Комментарий: %s\n" % order.comment
-    txt += "\n<b>Содержимое:</b>\n\n"
-    a = order.items
-    #print(a)
-    for i, q in a.items():
-        #print(id, q)
-
-        name = await quick_commands.select_item_name(int(i), lang)
-        print(name)
-        price = await quick_commands.select_item_price(int(i))
-        total = int(price) * q
-        txt += "<b>%s</b>\n%s x %s = %s\n\n" % (name, price, q, total)
-        print(txt)
-    if order.type_delivery == 1:
-        txt += "<b>Доставка = </b>%s" % order.delivery_price
-    txt += "\n\n\n<b>Итого: </b>%s" % order.total_price
-
-    await dp.bot.send_message(user_id, txt, parse_mode="HTML")
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    # Добавление филиалов
 
     # await quick_commands.add_branch(name="KFC C1", location={"lat":41.311882, "lon":69.290753}, contacts="")
     # await quick_commands.add_branch(name="KFC Chilanzor", location={"lat":41.275180, "lon":69.204455}, contacts="")

@@ -1,14 +1,9 @@
 from aiogram import types
-from aiogram import types
 from aiogram.dispatcher import FSMContext
-
-from keyboards.default import main_menu
-from keyboards.inline import courier_ed, courier_ing, courier_yn
+from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
 from loader import dp
 from states.orders import Admin
 from utils.db_api import quick_commands
-# from dotenv import load_dotenv
-# from twilio.rest import Client
 from utils.misc import rate_limit, get_address_from_coords
 
 
@@ -63,6 +58,24 @@ async def admin_courier(query: types.CallbackQuery, state: FSMContext):
         await Admin.c_main.set()
     elif data == 'back':
         await query.message.delete()
+
+        main_menu = ReplyKeyboardMarkup(
+            keyboard=[
+                [
+                    KeyboardButton(text="Начать заказ 🍽"),
+                ],
+                [
+                    KeyboardButton(text="Оставить отзыв 📝"),
+                    KeyboardButton(text="Мои заказы 🛒")
+                ],
+                [
+                    KeyboardButton(text="Контакты 📲"),
+                    KeyboardButton(text="Настройки 🛠")
+                ]
+            ],
+            resize_keyboard=True
+        )
+
         await dp.bot.send_message(id, "Choose option", reply_markup=main_menu)
         await state.finish()
     elif await quick_commands.select_order_by_id(int(data)):
@@ -82,11 +95,23 @@ async def admin_courier(query: types.CallbackQuery, state: FSMContext):
             if order.status == 1 or order.status == 2 or order.status == 3:
                 status = "Приготовление"
                 text = text % (order.id, user_name, user_number, address[21:], delivery_price, total_price, status)
+
+                courier_ing = types.InlineKeyboardMarkup(row_width=1)
+                courier_ing.add(types.InlineKeyboardButton("Забрал ✔", callback_data="delivery"),
+                                types.InlineKeyboardButton("Локация 📍", callback_data="location"),
+                                types.InlineKeyboardButton("Назад 🔙", callback_data='back'))
+
                 await dp.bot.send_message(id, text, reply_markup=courier_ing)
                 await Admin.c_process.set()
             elif order.status == 4:
                 status = "Доставка"
                 text = text % (order.id, user_name, user_number, address[21:], delivery_price, total_price, status)
+
+                courier_ed = types.InlineKeyboardMarkup(row_width=1)
+                courier_ed.add(types.InlineKeyboardButton("Доставил ✔", callback_data="delivered"),
+                               types.InlineKeyboardButton("Локация 📍", callback_data="location"),
+                               types.InlineKeyboardButton("Назад 🔙", callback_data='back'))
+
                 await dp.bot.send_message(id, text, reply_markup=courier_ed)
                 await Admin.c_process.set()
         else:
@@ -97,11 +122,23 @@ async def admin_courier(query: types.CallbackQuery, state: FSMContext):
                 if order.status == 1 or order.status == 2 or order.status == 3:
                     status = "Приготовление"
                     text = text % (order.id, p_type, user_name, user_number, address[21:], status)
+
+                    courier_ing = types.InlineKeyboardMarkup(row_width=1)
+                    courier_ing.add(types.InlineKeyboardButton("Забрал ✔", callback_data="delivery"),
+                                    types.InlineKeyboardButton("Локация 📍", callback_data="location"),
+                                    types.InlineKeyboardButton("Назад 🔙", callback_data='back'))
+
                     await dp.bot.send_message(id, text, reply_markup=courier_ing)
                     await Admin.c_process.set()
                 elif order.status == 4:
                     status = "Доставка"
                     text = text % (order.id, p_type, user_name, user_number, address[21:], status)
+
+                    courier_ed = types.InlineKeyboardMarkup(row_width=1)
+                    courier_ed.add(types.InlineKeyboardButton("Доставил ✔", callback_data="delivered"),
+                                   types.InlineKeyboardButton("Локация 📍", callback_data="location"),
+                                   types.InlineKeyboardButton("Назад 🔙", callback_data='back'))
+
                     await dp.bot.send_message(id, text, reply_markup=courier_ed)
                     await Admin.c_process.set()
             elif order.p_type == "Click":
@@ -110,11 +147,23 @@ async def admin_courier(query: types.CallbackQuery, state: FSMContext):
                 if order.status == 1 or order.status == 2 or order.status == 3:
                     status = "Приготовление"
                     text = text % (order.id, p_type, user_name, user_number, address[21:], status)
+
+                    courier_ing = types.InlineKeyboardMarkup(row_width=1)
+                    courier_ing.add(types.InlineKeyboardButton("Забрал ✔", callback_data="delivery"),
+                                    types.InlineKeyboardButton("Локация 📍", callback_data="location"),
+                                    types.InlineKeyboardButton("Назад 🔙", callback_data='back'))
+
                     await dp.bot.send_message(id, text, reply_markup=courier_ing)
                     await Admin.c_process.set()
                 elif order.status == 4:
                     status = "Доставка"
                     text = text % (order.id, p_type, user_name, user_number, address[21:], status)
+
+                    courier_ed = types.InlineKeyboardMarkup(row_width=1)
+                    courier_ed.add(types.InlineKeyboardButton("Доставил ✔", callback_data="delivered"),
+                                   types.InlineKeyboardButton("Локация 📍", callback_data="location"),
+                                   types.InlineKeyboardButton("Назад 🔙", callback_data='back'))
+
                     await dp.bot.send_message(id, text, reply_markup=courier_ed)
                     await Admin.c_process.set()
 
@@ -189,6 +238,12 @@ async def c_process(query: types.CallbackQuery, state: FSMContext):
 
             status = "Доставка"
             text = text % (order.id, user_name, user_number, address[21:], delivery_price, total_price, status)
+
+            courier_ed = types.InlineKeyboardMarkup(row_width=1)
+            courier_ed.add(types.InlineKeyboardButton("Доставил ✔", callback_data="delivered"),
+                           types.InlineKeyboardButton("Локация 📍", callback_data="location"),
+                           types.InlineKeyboardButton("Назад 🔙", callback_data='back'))
+
             await dp.bot.send_message(id, text, reply_markup=courier_ed)
             await Admin.c_process.set()
         else:
@@ -197,12 +252,24 @@ async def c_process(query: types.CallbackQuery, state: FSMContext):
                 p_type = "Payme"
                 status = "Доставка"
                 text = text % (order.id, p_type, user_name, user_number, address[21:], status)
+
+                courier_ed = types.InlineKeyboardMarkup(row_width=1)
+                courier_ed.add(types.InlineKeyboardButton("Доставил ✔", callback_data="delivered"),
+                               types.InlineKeyboardButton("Локация 📍", callback_data="location"),
+                               types.InlineKeyboardButton("Назад 🔙", callback_data='back'))
+
                 await dp.bot.send_message(id, text, reply_markup=courier_ed)
                 await Admin.c_process.set()
             elif order.p_type == "Click":
                 p_type = "Click"
                 status = "Доставка"
                 text = text % (order.id, p_type, user_name, user_number, address[21:], status)
+
+                courier_ed = types.InlineKeyboardMarkup(row_width=1)
+                courier_ed.add(types.InlineKeyboardButton("Доставил ✔", callback_data="delivered"),
+                               types.InlineKeyboardButton("Локация 📍", callback_data="location"),
+                               types.InlineKeyboardButton("Назад 🔙", callback_data='back'))
+
                 await dp.bot.send_message(id, text, reply_markup=courier_ed)
                 await Admin.c_process.set()
 
@@ -211,6 +278,11 @@ async def c_process(query: types.CallbackQuery, state: FSMContext):
             await query.message.delete()
             text = "<b>Спасибо за доставку!</b>\n\nБыл ли данный заказ (%s) оплачен?"
             text = text % order.id
+
+            courier_yn = types.InlineKeyboardMarkup(row_width=2)
+            courier_yn.row(types.InlineKeyboardButton("Да ✔", callback_data="yes"),
+                           types.InlineKeyboardButton("Нет ❌", callback_data="no"))
+
             await dp.bot.send_message(id, text, reply_markup=courier_yn)
             await Admin.c_process_paid.set()
 

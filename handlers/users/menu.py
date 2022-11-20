@@ -1,41 +1,47 @@
 from aiogram import types
 from aiogram.dispatcher import FSMContext
-from aiogram.dispatcher.filters.builtin import Text, Command
-from aiogram.types import ReplyKeyboardRemove, ReplyKeyboardMarkup, KeyboardButton
-
+from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
 from handlers.users.cart import show_cart
 from handlers.users.create_order import start_order
-from keyboards.default import location, d_or_d, yes_no, main_menu, delivery_yes_no, languages, quantity
 from loader import dp
-from states.orders import Order, Reg
+from states.orders import Order
 from utils.db_api import quick_commands
+from utils.misc import rate_limit
 
-from data import lang_en
-# import os
-# from dotenv import load_dotenv
-# from twilio.rest import Client
-# from random import randint
-# from utils.db_api.models import User
-from utils.misc import rate_limit, get_address_from_coords
-from handlers.users.delivery_d_location import start_ordering
-lang = ""
 
 # Меню (напитки, боксы итд) + возврат к выбору доставки или самовывоза
 
 @rate_limit(1, key="menu")
 @dp.message_handler(state=Order.menu)
 async def menu_cat(message: types.Message, state: FSMContext):
-    global lang
     id = message.from_user.id
     lang = await quick_commands.select_language(id)
-    back = ["Назад"]
-    cart = ["Корзина", "Savat", "Cart"]
-    order_make = ["Оформить заказ", "Buyurtma berish", "Make an order"]
+    back = ["Назад 🔙", "Orqaga 🔙", "Back 🔙"]
+    cart = ["Корзина 🛒", "Savat 🛒", "Cart 🛒"]
+    order_make = ["Оформить заказ 🚚", "Buyurtma berish 🚚", "Make an order 🚚"]
     cats_list = await quick_commands.get_only_categories(lang)
     list_cat = await quick_commands.get_categories(lang)
     if message.text in list_cat:  # Если выбрана категория, корзина, оформление заказа или кнопка назад
         if message.text in back:
-            await message.answer(f'Приступим к оформлению?', reply_markup=main_menu)
+
+            main_menu = ReplyKeyboardMarkup(
+                keyboard=[
+                    [
+                        KeyboardButton(text="Начать заказ 🍽"),
+                    ],
+                    [
+                        KeyboardButton(text="Оставить отзыв 📝"),
+                        KeyboardButton(text="Мои заказы 🛒")
+                    ],
+                    [
+                        KeyboardButton(text="Контакты 📲"),
+                        KeyboardButton(text="Настройки 🛠")
+                    ]
+                ],
+                resize_keyboard=True
+            )
+
+            await message.answer('Приступим к оформлению?', reply_markup=main_menu)
             await state.finish()
         elif message.text in cart:
             #await Order.cart.set()
@@ -50,7 +56,8 @@ async def menu_cat(message: types.Message, state: FSMContext):
             # print(cats)
             cats_l = ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True, row_width=2).add(
                 *[KeyboardButton(text=cat) for cat in cats])
-            await message.answer("Выбрана категория: " + message.text, reply_markup=cats_l)
+            text = "Выбрана категория: %s" % message.text
+            await message.answer(text, reply_markup=cats_l)
             await state.update_data(category=category)
             await Order.menu_subcat.set()
     else:
@@ -70,9 +77,9 @@ async def menu_sub_cat(message: types.Message, state: FSMContext):
     global lang
     id = message.from_user.id
     lang = await quick_commands.select_language(id)
-    back = ["Назад", "Ortga", "Back"]
-    cart = ["Корзина", "Savat", "Cart"]
-    order_make = ["Оформить заказ", "Buyurtma berish", "Make an order"]
+    back = ["Назад 🔙", "Orqaga 🔙", "Back 🔙"]
+    cart = ["Корзина 🛒", "Savat 🛒", "Cart 🛒"]
+    order_make = ["Оформить заказ 🚚", "Buyurtma berish 🚚", "Make an order 🚚"]
     category = ""
     # await state.update_data(items={})
     async with state.proxy() as data:
@@ -84,7 +91,7 @@ async def menu_sub_cat(message: types.Message, state: FSMContext):
                 cats = await quick_commands.get_categories(lang)
                 cat_lan = ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True, row_width=2).add(
                     *[KeyboardButton(text=cat) for cat in cats])
-                await message.answer("Назад", reply_markup=cat_lan)
+                await message.answer("Назад 🔙", reply_markup=cat_lan)
                 await Order.menu.set()
             elif message.text in cart:
                 # await Order.cart.set()
@@ -111,10 +118,36 @@ async def menu_sub_cat(message: types.Message, state: FSMContext):
                     desc_select_lang = item.d_en
 
                 photo_n = item.photo
-                # photo_n = "./data/img/longer.png"
                 price = item.price
-                caption = "<b>" + name_select_lang + "\n\n</b>" + "<i>" + desc_select_lang + "\n\n\n</i>" + str(
-                    price) + " сум\n\n" + "<b>Выберите количество</b>"
+                # caption = "<b>" + name_select_lang + "\n\n</b>" + "<i>" + desc_select_lang + "\n\n\n</i>" + str(price) + " сум\n\n" + "<b>Выберите количество</b>"
+                caption = "<b>%s\n\n</b><i>%s\n\n\n</i>%s сум\n\n<b>Выберите количество:</b>" % (name_select_lang, desc_select_lang, str(price))
+
+                quantity = ReplyKeyboardMarkup(
+                    keyboard=[
+                        [
+                            KeyboardButton(text="1"),
+                            KeyboardButton(text="2"),
+                            KeyboardButton(text="3"),
+                        ],
+                        [
+                            KeyboardButton(text="4"),
+                            KeyboardButton(text="5"),
+                            KeyboardButton(text="6"),
+                        ],
+                        [
+                            KeyboardButton(text="7"),
+                            KeyboardButton(text="8"),
+                            KeyboardButton(text="9"),
+                        ],
+                        [
+                            KeyboardButton(text="Корзина 🛒"),
+                            KeyboardButton(text="Назад 🔙")
+                        ]
+                    ],
+                    resize_keyboard=True,
+                    one_time_keyboard=True
+                )
+
                 await dp.bot.send_photo(chat_id=id, photo=open(photo_n, "rb"), caption=caption, parse_mode="HTML",
                                         reply_markup=quantity)  # reply_markup=cats
                 await state.update_data(item_id=item.id)
@@ -134,8 +167,8 @@ async def menu_item(message: types.Message, state: FSMContext):
     global lang
     id = message.from_user.id
     lang = await quick_commands.select_language(id)
-    back = ["Назад", "Ortga", "Back"]
-    cart = ["Корзина", "Savat", "Cart"]
+    back = ["Назад 🔙", "Orqaga 🔙", "Back 🔙"]
+    cart = ["Корзина 🛒", "Savat 🛒", "Cart 🛒"]
 
     # await state.update_data(items={})
     async with state.proxy() as data:
@@ -165,7 +198,7 @@ async def menu_item(message: types.Message, state: FSMContext):
             cats = await quick_commands.get_subcategories(category, lang)
             cat_lan = ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True, row_width=2).add(
                 *[KeyboardButton(text=cat) for cat in cats])
-            await message.answer("Назад", reply_markup=cat_lan)
+            await message.answer("Назад 🔙", reply_markup=cat_lan)
             await Order.menu_subcat.set()
         else:
             await message.answer("Неверный формат,выберите количество товара ниже или введите число вручную")

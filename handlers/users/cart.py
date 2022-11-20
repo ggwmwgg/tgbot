@@ -1,30 +1,16 @@
 from aiogram import types
 from aiogram.dispatcher import FSMContext
-from aiogram.dispatcher.filters.builtin import Text, Command
 from aiogram.types import ReplyKeyboardRemove, ReplyKeyboardMarkup, KeyboardButton
-
-from data import lang_en
-from handlers.users.create_order import start_order
-from keyboards.default import location, d_or_d, yes_no, main_menu, delivery_yes_no, languages, quantity
 from loader import dp
-from states.orders import Order, Reg
+from states.orders import Order
 from utils.db_api import quick_commands
-from keyboards.inline import no_comm
-# import os
-# from dotenv import load_dotenv
-# from twilio.rest import Client
-# from random import randint
-# from utils.db_api.models import User
-from utils.misc import rate_limit, get_address_from_coords
-# from handlers.users.create_order import start_order
+from utils.misc import rate_limit
+
 
 comments = "Добавьте комментарий к вашему заказу\nИли нажмите на соответствующую кнопку\n"
 
-# Корзина тест
+# Корзина
 @rate_limit(1, key="cart")
-# @dp.message_handler(Text(equals=["Корзина"]), state=Order.menu)
-# @dp.message_handler(Text(equals=["Корзина"]), state=Order.menu_subcat)
-# @dp.message_handler(Text(equals=["Корзина"]), state=Order.menu_item)
 async def show_cart(message: types.Message):
     id = message.from_user.id
     lang = await quick_commands.select_language(id=id)
@@ -63,6 +49,24 @@ async def show_cart(message: types.Message):
         koker = lilo.message_id
         await Order.menu_cart.set()
     else:
+
+        main_menu = ReplyKeyboardMarkup(
+            keyboard=[
+                [
+                    KeyboardButton(text="Начать заказ 🍽"),
+                ],
+                [
+                    KeyboardButton(text="Оставить отзыв 📝"),
+                    KeyboardButton(text="Мои заказы 🛒")
+                ],
+                [
+                    KeyboardButton(text="Контакты 📲"),
+                    KeyboardButton(text="Настройки 🛠")
+                ]
+            ],
+            resize_keyboard=True
+        )
+
         await message.answer("Ваша корзина пуста", reply_markup=main_menu)
         cats = await quick_commands.get_categories(lang)
         cat_lan = ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True, row_width=2).add(
@@ -133,13 +137,36 @@ async def inline_cart_callback_handler(query: types.CallbackQuery, state: FSMCon
         await Order.menu.set()
     elif data == 'order':  # Оформить заказ
         if await quick_commands.select_cart(id):
-            await dp.bot.delete_message(chat_id=id, message_id=koker)
+            await query.message.delete()
             lil = await dp.bot.send_message(id, text="Загрузка заказа", parse_mode="HTML", reply_markup=ReplyKeyboardRemove())
             await lil.delete()
+
+            no_comm = types.InlineKeyboardMarkup(row_width=1, one_time_keyboard=True)
+            no_comm.add(types.InlineKeyboardButton("Нет комментариев 💭", callback_data='no_comm'),
+                        types.InlineKeyboardButton("Назад 🔙", callback_data='back'))
+
             lul = await dp.bot.send_message(id, comments, reply_markup=no_comm)
             await state.update_data(msg_id=lul['message_id'])
             await Order.menu_confirm.set()
         else:
+
+            main_menu = ReplyKeyboardMarkup(
+                keyboard=[
+                    [
+                        KeyboardButton(text="Начать заказ 🍽"),
+                    ],
+                    [
+                        KeyboardButton(text="Оставить отзыв 📝"),
+                        KeyboardButton(text="Мои заказы 🛒")
+                    ],
+                    [
+                        KeyboardButton(text="Контакты 📲"),
+                        KeyboardButton(text="Настройки 🛠")
+                    ]
+                ],
+                resize_keyboard=True
+            )
+
             await dp.bot.send_message(id, "Ваша корзина пуста", reply_markup=main_menu)
             cats = await quick_commands.get_categories(lang)
             cat_lan = ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True, row_width=2).add(
