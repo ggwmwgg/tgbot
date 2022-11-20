@@ -4,14 +4,9 @@ from aiogram import types
 from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters.builtin import Text, Command
 from aiogram.types import ReplyKeyboardRemove, ReplyKeyboardMarkup, KeyboardButton
-# from keyboards.default import main_menu, languages, ac_main, ac_users, ac_back
-#from keyboards.inline import keyboard_markup, lang_markup, ban_markup, rights_markup, orders_a, order_info, \
-#    order_by_id_quantity
 from loader import dp
 from states.orders import Reg, Admin
 from utils.db_api import quick_commands
-# from dotenv import load_dotenv
-# from twilio.rest import Client
 from utils.misc import rate_limit
 
 
@@ -54,11 +49,7 @@ async def acp(message: types.Message, state: FSMContext):
                 keyboard=[
                     [
                         KeyboardButton(text="Пользователи 🧑‍🤝‍🧑"),
-                        KeyboardButton(text="Филиалы 🏢"),
-                    ],
-                    [
                         KeyboardButton(text="Заказы 🛒"),
-                        KeyboardButton(text="Товары 🍽"),
                     ],
                     [
                         KeyboardButton(text="Назад 🔙")
@@ -283,11 +274,7 @@ async def a_users_back(message: types.Message):
         keyboard=[
             [
                 KeyboardButton(text="Пользователи 🧑‍🤝‍🧑"),
-                KeyboardButton(text="Филиалы 🏢"),
-            ],
-            [
                 KeyboardButton(text="Заказы 🛒"),
-                KeyboardButton(text="Товары 🍽"),
             ],
             [
                 KeyboardButton(text="Назад 🔙")
@@ -1000,11 +987,7 @@ async def inline_kb_answer_callback_handler(query: types.CallbackQuery, state: F
                 keyboard=[
                     [
                         KeyboardButton(text="Пользователи 🧑‍🤝‍🧑"),
-                        KeyboardButton(text="Филиалы 🏢"),
-                    ],
-                    [
                         KeyboardButton(text="Заказы 🛒"),
-                        KeyboardButton(text="Товары 🍽"),
                     ],
                     [
                         KeyboardButton(text="Назад 🔙")
