@@ -19,14 +19,14 @@ async def show_cart(message: types.Message):
     lan = gettext.translation('tgbot', localedir='locales', languages=[lang])
     lan.install()
     _ = lan.gettext
-    back = "Назад"
-    clear = "Очистить"
-    order = "Оформить заказ"
-    cirt = "Корзина"
-    tot = "Итого"
-    pr = "сум"
-    dll = "Доставка"
-    info = f"Нажмите на название товара для его удаления\n{clear} для очистки корзины\n{order} для оформления заказа\n\n"
+    back = _("Назад 🔙")
+    clear = _("Очистить 🗑")
+    order = _("Оформить заказ 🚚")
+    cirt = _("Корзина 🛒")
+    tot = _("Итого")
+    pr = _("сум")
+    dll = _("Доставка")
+    info = _("Нажмите на название товара для его удаления\n{clear} для очистки корзины\n{order} для оформления заказа\n\n")
     if await quick_commands.select_cart(id):
         user_cart = await quick_commands.select_user(id)
         kok = f"<b>{cirt}:\n\n</b>"
@@ -48,7 +48,7 @@ async def show_cart(message: types.Message):
         inline_kb1.row(types.InlineKeyboardButton(back, callback_data="back"),
                        types.InlineKeyboardButton(clear, callback_data="clear"))
         inline_kb1.row(types.InlineKeyboardButton(order, callback_data="order"))
-        lil = await message.answer(text="Загрузка корзины", parse_mode="HTML", reply_markup=ReplyKeyboardRemove())
+        lil = await message.answer(text=_("Загрузка корзины"), parse_mode="HTML", reply_markup=ReplyKeyboardRemove())
         await lil.delete()
         lilo = await message.answer(text=kok, parse_mode="HTML",reply_markup=inline_kb1)
         koker = lilo.message_id
@@ -58,25 +58,25 @@ async def show_cart(message: types.Message):
         main_menu = ReplyKeyboardMarkup(
             keyboard=[
                 [
-                    KeyboardButton(text="Начать заказ 🍽"),
+                    KeyboardButton(text=_("Начать заказ 🍽")),
                 ],
                 [
-                    KeyboardButton(text="Оставить отзыв 📝"),
-                    KeyboardButton(text="Мои заказы 🛒")
+                    KeyboardButton(text=_("Оставить отзыв 📝")),
+                    KeyboardButton(text=_("Мои заказы 🛒"))
                 ],
                 [
-                    KeyboardButton(text="Контакты 📲"),
-                    KeyboardButton(text="Настройки 🛠")
+                    KeyboardButton(text=_("Контакты 📲")),
+                    KeyboardButton(text=_("Настройки 🛠"))
                 ]
             ],
             resize_keyboard=True
         )
 
-        await message.answer("Ваша корзина пуста", reply_markup=main_menu)
+        await message.answer(_("Ваша корзина пуста"), reply_markup=main_menu)
         cats = await quick_commands.get_categories(lang)
         cat_lan = ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True, row_width=2).add(
             *[KeyboardButton(text=cat) for cat in cats])
-        await message.answer("Выберите категорию", reply_markup=cat_lan)
+        await message.answer(_("Выберите категорию"), reply_markup=cat_lan)
         await Order.menu.set()
 
 
@@ -89,28 +89,30 @@ async def inline_cart_callback_handler(query: types.CallbackQuery, state: FSMCon
     lan.install()
     _ = lan.gettext
     data = query.data
-    back = "Назад"
-    clear = "Очистить"
-    order = "Оформить заказ"
-    cirt = "Корзина"
-    tot = "Итого"
-    pr = "сум"
-    dll = "Доставка"
+    back = _("Назад 🔙")
+    clear = _("Очистить")
+    order = _("Оформить заказ")
+    cirt = _("Корзина")
+    tot = _("Итого")
+    pr = _("сум")
+    dll = _("Доставка")
     list = await quick_commands.get_cart_list_nox(id, lang)
     user_cart = await quick_commands.select_user(id)
 
     if data in list:  # Удаление из корзины
         item_id = await quick_commands.get_item_by_name(data, lang)
         await quick_commands.delete_cart_by_itemid(id, item_id.id)
-        deleted = f"<i>Товар {data} удален из корзины</i>\n\n"
-        info = f"Нажмите на название товара для его удаления\n{clear} для очистки корзины\n{order} для оформления заказа\n\n"
+        deleted = _("<i>Товар %s удален из корзины</i>\n\n")
+        deleted = deleted % data
+        info = _("Нажмите на название товара для его удаления\n%s для очистки корзины\n%s для оформления заказа\n\n")
+        info = info % (clear, order)
         kok = f"<b>{cirt}:\n\n</b>"
         price_total = 0
         for item in await quick_commands.select_cart(id):
             name = await quick_commands.select_item_name(item.item_id, lang)
             price = await quick_commands.select_item_price(item.item_id)
             price_total += item.price
-            kok += f"<b>{name}</b>\n" + f"<b>{item.quantity}</b>" + " x " + f"{price}" + " = " + f"{item.price} сум\n\n"
+            kok += f"<b>{name}</b>\n" + f"<b>{item.quantity}</b>" + " x " + f"{price}" + " = " + f"{item.price} " + _("сум") + "\n\n"
         if user_cart.last == 1:
             price_total += user_cart.last_delivery
             kok += f"<b>{dll}</b> = <b><i>{user_cart.last_delivery} {pr}</i></b>\n\n"
@@ -128,12 +130,12 @@ async def inline_cart_callback_handler(query: types.CallbackQuery, state: FSMCon
         await Order.menu_cart.set()
     elif data == 'clear':  # Очистка корзины
         await quick_commands.clear_cart_by_user_id(id)
-        text = f"<b>Корзина очищена</b>"
+        text = _("<b>Корзина очищена</b>")
         await query.message.edit_text(text=text, parse_mode="HTML")
         cats = await quick_commands.get_categories(lang)
         cat_lan = ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True, row_width=2).add(
             *[KeyboardButton(text=cat) for cat in cats])
-        await dp.bot.send_message(chat_id=id, text="Выберите категорию", reply_markup=cat_lan)
+        await dp.bot.send_message(chat_id=id, text=_("Выберите категорию"), reply_markup=cat_lan)
         await Order.menu.set()
     elif data == 'back':  # Назад
         text = "<b>" + back + "</b>"
@@ -141,17 +143,17 @@ async def inline_cart_callback_handler(query: types.CallbackQuery, state: FSMCon
         cats = await quick_commands.get_categories(lang)
         cat_lan = ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True, row_width=2).add(
             *[KeyboardButton(text=cat) for cat in cats])
-        await dp.bot.send_message(chat_id=id, text="Выберите категорию", reply_markup=cat_lan)
+        await dp.bot.send_message(chat_id=id, text=_("Выберите категорию"), reply_markup=cat_lan)
         await Order.menu.set()
     elif data == 'order':  # Оформить заказ
         if await quick_commands.select_cart(id):
             await query.message.delete()
-            lil = await dp.bot.send_message(id, text="Загрузка заказа", parse_mode="HTML", reply_markup=ReplyKeyboardRemove())
+            lil = await dp.bot.send_message(id, text=_("Загрузка заказа"), parse_mode="HTML", reply_markup=ReplyKeyboardRemove())
             await lil.delete()
 
             no_comm = types.InlineKeyboardMarkup(row_width=1, one_time_keyboard=True)
-            no_comm.add(types.InlineKeyboardButton("Нет комментариев 💭", callback_data='no_comm'),
-                        types.InlineKeyboardButton("Назад 🔙", callback_data='back'))
+            no_comm.add(types.InlineKeyboardButton(_("Нет комментариев 💭"), callback_data='no_comm'),
+                        types.InlineKeyboardButton(_("Назад 🔙"), callback_data='back'))
 
             lul = await dp.bot.send_message(id, comments, reply_markup=no_comm)
             await state.update_data(msg_id=lul['message_id'])
@@ -161,25 +163,25 @@ async def inline_cart_callback_handler(query: types.CallbackQuery, state: FSMCon
             main_menu = ReplyKeyboardMarkup(
                 keyboard=[
                     [
-                        KeyboardButton(text="Начать заказ 🍽"),
+                        KeyboardButton(text=_("Начать заказ 🍽")),
                     ],
                     [
-                        KeyboardButton(text="Оставить отзыв 📝"),
-                        KeyboardButton(text="Мои заказы 🛒")
+                        KeyboardButton(text=_("Оставить отзыв 📝")),
+                        KeyboardButton(text=_("Мои заказы 🛒"))
                     ],
                     [
-                        KeyboardButton(text="Контакты 📲"),
-                        KeyboardButton(text="Настройки 🛠")
+                        KeyboardButton(text=_("Контакты 📲")),
+                        KeyboardButton(text=_("Настройки 🛠"))
                     ]
                 ],
                 resize_keyboard=True
             )
 
-            await dp.bot.send_message(id, "Ваша корзина пуста", reply_markup=main_menu)
+            await dp.bot.send_message(id, _("Ваша корзина пуста"), reply_markup=main_menu)
             cats = await quick_commands.get_categories(lang)
             cat_lan = ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True, row_width=2).add(
                 *[KeyboardButton(text=cat) for cat in cats])
-            await dp.bot.send_message(id, "Выберите категорию", reply_markup=cat_lan)
+            await dp.bot.send_message(id, _("Выберите категорию"), reply_markup=cat_lan)
             await Order.menu.set()
 
 
@@ -190,11 +192,13 @@ async def inline_cart_callback_handler(message:types.Message, state: FSMContext)
     lan = gettext.translation('tgbot', localedir='locales', languages=[lang])
     lan.install()
     _ = lan.gettext
-    if message.text == "Назад":
+    back = ["Назад 🔙", "Back 🔙", "Назад 🔙"]
+    if message.text in back:
+
         cats = await quick_commands.get_categories(lang)
         cat_lan = ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True, row_width=2).add(
             *[KeyboardButton(text=cat) for cat in cats])
-        await message.answer("Выберите категорию", reply_markup=cat_lan)
+        await message.answer(_("Выберите категорию"), reply_markup=cat_lan)
         await Order.menu.set()
     else:
-        await message.answer("Неверная команда, используйте кнопки под сообщением")
+        await message.answer(_("Неверная команда, используйте кнопки под сообщением"))

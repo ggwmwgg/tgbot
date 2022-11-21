@@ -12,7 +12,7 @@ async def block_me(message: types.Message, user: User):
     await message.answer(f"Пользователь имеет статус: {user.allowed}. Теперь доступ запрещен. "
                          f"Разблокировать можно по команде /unblock_me")
 
-    user.block()
+    # user.block()
 
 
 @allow_access()
@@ -20,4 +20,4 @@ async def block_me(message: types.Message, user: User):
 async def block_me(message: types.Message, user: User):
     await message.answer(f"Пользователь имеет статус: {user.allowed}. Теперь доступ разрешен. "
                          f"Заблокировать можно по команде /block_me")
-    user.allow()
+    # user.allow()

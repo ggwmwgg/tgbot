@@ -27,20 +27,20 @@ async def bot_start(message: types.Message):
         main_menu = ReplyKeyboardMarkup(
             keyboard=[
                 [
-                    KeyboardButton(text="Начать заказ 🍽"),
+                    KeyboardButton(text=_("Начать заказ 🍽")),
                 ],
                 [
-                    KeyboardButton(text="Оставить отзыв 📝"),
-                    KeyboardButton(text="Мои заказы 🛒")
+                    KeyboardButton(text=_("Оставить отзыв 📝")),
+                    KeyboardButton(text=_("Мои заказы 🛒"))
                 ],
                 [
-                    KeyboardButton(text="Контакты 📲"),
-                    KeyboardButton(text="Настройки 🛠")
+                    KeyboardButton(text=_("Контакты 📲")),
+                    KeyboardButton(text=_("Настройки 🛠"))
                 ]
             ],
             resize_keyboard=True
         )
-        await message.answer(f'Приступим к оформлению? 📝', reply_markup=main_menu)
+        await message.answer(_('Приступим к оформлению? 📝'), reply_markup=main_menu)
         # await Order.d_or_d.set()
     else:
         languages = ReplyKeyboardMarkup(
@@ -113,12 +113,12 @@ async def name(message: types.Message, state: FSMContext):
     nmbr = ReplyKeyboardMarkup(
         keyboard=[
             [
-                KeyboardButton(text="Отправить номер 📲", request_contact=True)
+                KeyboardButton(text=_("Отправить номер 📲"), request_contact=True)
             ]
         ],
         resize_keyboard=True
     )
-    await message.answer("Отправьте ваш номер или введите его в формате +998911234567", reply_markup=nmbr)
+    await message.answer(_("Отправьте ваш номер или введите его в формате +998911234567"), reply_markup=nmbr)
     await Reg.next()
 
 
@@ -143,7 +143,7 @@ async def nn(message: types.Message, state: FSMContext):
 
     if result:
         if await quick_commands.check_number(number):
-            await message.answer("Данный номер уже зарегистрирован\n\nВведите другой номер")
+            await message.answer(_("Данный номер уже зарегистрирован\n\nВведите другой номер"))
         else:
 
             load_dotenv()
@@ -153,13 +153,13 @@ async def nn(message: types.Message, state: FSMContext):
             client = Client(account, token)
 
             # messages = client.messages.create(to=f"{number}",from_="+14632231765",body=f"GGsellbot: {verification_code}")
-            text = "На ваш номер был отправлен код, пожалуйста введите его ниже. %s" % verification_code
+            text = _("На ваш номер был отправлен код, пожалуйста введите его ниже. %s") % verification_code
             await message.answer(text,reply_markup=ReplyKeyboardRemove())
             await state.update_data(verification_code=verification_code)
             await Reg.next()
     else:
-        await message.answer("Неправильный формат.\nПожалуйста, отправьте ваш номер или введите его в формате "
-                             "+998911234567")
+        await message.answer(_("Неправильный формат.\nПожалуйста, отправьте ваш номер или введите его в формате "
+                             "+998911234567"))
 
 
 @rate_limit(2, key="code")
@@ -172,7 +172,7 @@ async def verification(message: types.Message, state: FSMContext):
     _ = lan.gettext
     user_entry = message.text
     time_now = datetime.now()
-    text = 'Уважаемый %s!\nВы успешно зарегистрировались!\nВаш язык: %s\nВаш номер: %s\n'
+    text = _('Уважаемый %s!\nВы успешно зарегистрировались!\nВаш язык: %s\nВаш номер: %s\n')
     date = time_now.strftime("%d.%m.%Y %H:%M")
     orders_no = 0
     async with state.proxy() as data:
@@ -188,21 +188,21 @@ async def verification(message: types.Message, state: FSMContext):
             main_menu = ReplyKeyboardMarkup(
                 keyboard=[
                     [
-                        KeyboardButton(text="Начать заказ 🍽"),
+                        KeyboardButton(text=_("Начать заказ 🍽")),
                     ],
                     [
-                        KeyboardButton(text="Оставить отзыв 📝"),
-                        KeyboardButton(text="Мои заказы 🛒")
+                        KeyboardButton(text=_("Оставить отзыв 📝")),
+                        KeyboardButton(text=_("Мои заказы 🛒"))
                     ],
                     [
-                        KeyboardButton(text="Контакты 📲"),
-                        KeyboardButton(text="Настройки 🛠")
+                        KeyboardButton(text=_("Контакты 📲")),
+                        KeyboardButton(text=_("Настройки 🛠"))
                     ]
                 ],
                 resize_keyboard=True
             )
-            await message.answer('Приступим к оформлению?', reply_markup=main_menu)
+            await message.answer(_('Приступим к оформлению?'), reply_markup=main_menu)
             await state.finish()
         else:
-            await message.answer("Неверный код.\nПожалуйста, введите его заново.")
+            await message.answer(_("Неверный код.\nПожалуйста, введите его заново."))
 

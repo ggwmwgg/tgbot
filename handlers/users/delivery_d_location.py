@@ -14,7 +14,7 @@ from utils.misc.calc_distance import choose_shortest_kek
 # Доставка или самовывоз?
 @rate_limit(1, key="order")
 @dp.message_handler(Command("order"), state=None)
-@dp.message_handler(Text(equals=["Начать заказ 🍽", "Start ordering 🍽", "Buyurtmani boshlash 🍽"]), state='*')
+@dp.message_handler(Text(equals=["Начать заказ 🍽", "Start ordering 🍽", "Buyurtma berishni boshlang 🍽"]), state='*')
 async def start_ordering(message: types.Message):
     if await quick_commands.select_user(id=message.from_user.id):
         lang = await quick_commands.select_language(message.from_user.id)
@@ -29,32 +29,33 @@ async def start_ordering(message: types.Message):
 
             type = ""
             if user.last == 1:
-                type = "Доставка"
+                type = _("Доставка")
             elif user.last == 2:
-                type = "Самовывоз"
+                type = _("Самовывоз")
             a_ss = ""
             try:
                 address_str = get_address_from_coords(f"{longitude},{latitude}")
                 a_ss = address_str[21:]
             except:
-                a_ss = "Error"
+                a_ss = "Ошибка"
 
-            type = f"Хотите ли вы использовать данные с последнего заказа?\n\n<b>Тип доставки:</b> {type}\n<b>Адрес доставки:</b> {a_ss}\n<b>Филиал:</b> {branch}\n\n<b><i>Или хотите использовать новые данные?</i></b>"
+            type_e = _("Хотите ли вы использовать данные с последнего заказа?\n\n<b>Тип доставки:</b> %s\n<b>Адрес доставки:</b> %s\n<b>Филиал:</b> %s\n\n<b><i>Или хотите использовать новые данные?</i></b>")
+            type_e = type_e % (type, a_ss, branch)
 
             old_d_or_d = ReplyKeyboardMarkup(
                 keyboard=[
                     [
-                        KeyboardButton(text="Использовать предыдущие данные 📝"),
+                        KeyboardButton(text=_("Использовать предыдущие данные 📝")),
                     ],
                     [
-                        KeyboardButton(text="Использовать новые данные 📄")
+                        KeyboardButton(text=_("Использовать новые данные 📄"))
                     ]
                 ],
                 resize_keyboard=True,
                 one_time_keyboard=True
             )
 
-            await message.answer(type, reply_markup=old_d_or_d)
+            await message.answer(type_e, reply_markup=old_d_or_d)
             await Order.d_or_d.set()
 
 
@@ -63,18 +64,18 @@ async def start_ordering(message: types.Message):
             d_or_d = ReplyKeyboardMarkup(
                 keyboard=[
                     [
-                        KeyboardButton(text="Доставка 🚕"),
-                        KeyboardButton(text="Самовывоз 🏃")
+                        KeyboardButton(text=_("Доставка 🚕")),
+                        KeyboardButton(text=_("Самовывоз 🏃"))
                     ],
                     [
-                        KeyboardButton(text="Назад 🔙")
+                        KeyboardButton(text=_("Назад 🔙"))
                     ]
                 ],
                 resize_keyboard=True,
                 one_time_keyboard=True
             )
 
-            await message.answer("Вам нужна доставка или самовывоз?", reply_markup=d_or_d)
+            await message.answer(_("Вам нужна доставка или самовывоз?"), reply_markup=d_or_d)
             await Order.asklocation.set()
     else:
 
@@ -112,13 +113,13 @@ async def ask_delivery(message: types.Message):
     lan = gettext.translation('tgbot', localedir='locales', languages=[lang])
     lan.install()
     _ = lan.gettext
-    old = ["Использовать предыдущие данные 📝", "Use previous data 📝", "Oldingi ma'lumotlardan foydalaning 📝"]
-    new = ["Использовать новые данные 📄", "Use new data 📄", "Yangi ma'lumotlardan foydalaning 📄"]
+    old = ["Использовать предыдущие данные 📝", "Use previous data 📝", "Oldingi maʼlumotlardan foydalaning 📝"]
+    new = ["Использовать новые данные 📄", "Use new data 📄", "Yangi maʼlumotlardan foydalaning 📄"]
     if message.text in old:
         cats = await quick_commands.get_categories(lang)
         cat_lan = ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True, row_width=2).add(
             *[KeyboardButton(text=cat) for cat in cats])
-        await message.answer("Начнем заказ?", reply_markup=cat_lan)
+        await message.answer(_("Начнем заказ?"), reply_markup=cat_lan)
         # print(cats)
         await quick_commands.update_last_order_type(message.from_user.id, 1)
         await Order.menu.set()
@@ -127,18 +128,18 @@ async def ask_delivery(message: types.Message):
         d_or_d = ReplyKeyboardMarkup(
             keyboard=[
                 [
-                    KeyboardButton(text="Доставка 🚕"),
-                    KeyboardButton(text="Самовывоз 🏃")
+                    KeyboardButton(text=_("Доставка 🚕")),
+                    KeyboardButton(text=_("Самовывоз 🏃"))
                 ],
                 [
-                    KeyboardButton(text="Назад 🔙")
+                    KeyboardButton(text=_("Назад 🔙"))
                 ]
             ],
             resize_keyboard=True,
             one_time_keyboard=True
         )
 
-        await message.answer("Вам нужна доставка или самовывоз?", reply_markup=d_or_d)
+        await message.answer(_("Вам нужна доставка или самовывоз?"), reply_markup=d_or_d)
         await quick_commands.update_last_order_type(id, 0)
         await quick_commands.update_last_branch(id, "Null")
         await quick_commands.update_last_order_coords(id, 0, 0)
@@ -148,17 +149,17 @@ async def ask_delivery(message: types.Message):
         old_d_or_d = ReplyKeyboardMarkup(
             keyboard=[
                 [
-                    KeyboardButton(text="Использовать предыдущие данные 📝"),
+                    KeyboardButton(text=_("Использовать предыдущие данные 📝")),
                 ],
                 [
-                    KeyboardButton(text="Использовать новые данные 📄")
+                    KeyboardButton(text=_("Использовать новые данные 📄"))
                 ]
             ],
             resize_keyboard=True,
             one_time_keyboard=True
         )
 
-        await message.answer("Выберите один из вариантов на клавиатуре", reply_markup=old_d_or_d)
+        await message.answer(_("Выберите один из вариантов на клавиатуре"), reply_markup=old_d_or_d)
 
 
 # При выборе доставки, просьба отправить локацию
@@ -173,17 +174,17 @@ async def ask_delivery(message: types.Message):
     location = ReplyKeyboardMarkup(
         keyboard=[
             [
-                KeyboardButton(text="Отправить локацию 📍", request_location=True)
+                KeyboardButton(text=_("Отправить локацию 📍"), request_location=True)
             ],
             [
-                KeyboardButton(text="Назад 🔙")
+                KeyboardButton(text=_("Назад 🔙"))
             ]
         ],
         resize_keyboard=True
     )
 
-    await message.answer("Пожалуйста, отправьте вашу локацию вручную или с помощью кнопки "
-                         "для определения ближайшего до Вас филиала для доставки", reply_markup=location)
+    await message.answer(_("Пожалуйста, отправьте вашу локацию вручную или с помощью кнопки "
+                         "для определения ближайшего до Вас филиала для доставки"), reply_markup=location)
 
     await Order.location_delivery.set()
 
@@ -199,18 +200,18 @@ async def ask_delivery(message: types.Message):
     d_or_d = ReplyKeyboardMarkup(
         keyboard=[
             [
-                KeyboardButton(text="Доставка 🚕"),
-                KeyboardButton(text="Самовывоз 🏃")
+                KeyboardButton(text=_("Доставка 🚕")),
+                KeyboardButton(text=_("Самовывоз 🏃"))
             ],
             [
-                KeyboardButton(text="Назад 🔙")
+                KeyboardButton(text=_("Назад 🔙"))
             ]
         ],
         resize_keyboard=True,
         one_time_keyboard=True
     )
 
-    await message.answer("Вам нужна доставка или самовывоз?", reply_markup=d_or_d)
+    await message.answer(_("Вам нужна доставка или самовывоз?"), reply_markup=d_or_d)
     await Order.asklocation.set()
 
 
@@ -231,19 +232,19 @@ async def delivery_set(message: types.Message, state: FSMContext):
     address_str = get_address_from_coords(f"{location.longitude},{location.latitude}")
 
     a_ss = address_str[21:]
-    text = "Ваш адрес %s.\nВы подтверждаете данный адрес или хотите отправить заново?"
+    text = _("Ваш адрес %s.\nВы подтверждаете данный адрес или хотите отправить заново?")
     text = text % a_ss
 
     delivery_yes_no = ReplyKeyboardMarkup(
         keyboard=[
             [
-                KeyboardButton(text="Подтвердить ✔"),
+                KeyboardButton(text=_("Подтвердить ✔")),
             ],
             [
-                KeyboardButton(text="Отправить заново 📍")
+                KeyboardButton(text=_("Отправить заново 📍"))
             ],
             [
-                KeyboardButton(text="Назад 🔙")
+                KeyboardButton(text=_("Назад 🔙"))
             ]
         ],
         resize_keyboard=True,
@@ -266,11 +267,11 @@ async def ask_delivery(message: types.Message):
     d_or_d = ReplyKeyboardMarkup(
         keyboard=[
             [
-                KeyboardButton(text="Доставка 🚕"),
-                KeyboardButton(text="Самовывоз 🏃")
+                KeyboardButton(text=_("Доставка 🚕")),
+                KeyboardButton(text=_("Самовывоз 🏃"))
             ],
             [
-                KeyboardButton(text="Назад 🔙")
+                KeyboardButton(text=_("Назад 🔙"))
             ]
         ],
         resize_keyboard=True,
@@ -293,17 +294,17 @@ async def confirmed_delivery(message: types.Message):
     location = ReplyKeyboardMarkup(
         keyboard=[
             [
-                KeyboardButton(text="Отправить локацию 📍", request_location=True)
+                KeyboardButton(text=_("Отправить локацию 📍"), request_location=True)
             ],
             [
-                KeyboardButton(text="Назад 🔙")
+                KeyboardButton(text=_("Назад 🔙"))
             ]
         ],
         resize_keyboard=True
     )
 
-    await message.answer("Пожалуйста, отправьте вашу локацию вручную или с помощью кнопки "
-                         "для определения ближайшего до Вас филиала для доставки", reply_markup=location)
+    await message.answer(_("Пожалуйста, отправьте вашу локацию вручную или с помощью кнопки "
+                         "для определения ближайшего до Вас филиала для доставки"), reply_markup=location)
 
     await Order.location_delivery.set()
 
@@ -335,7 +336,8 @@ async def confirmed_delivery(message: types.Message, state: FSMContext):
                 del_price = 15000
             else:
                 del_price = 20000
-            text = "Выбран филиал: %s\nРасстояние до него %s км.\nСтоимость доставки: %s сум\n\nНачнем заказ?" % (shop_name, dist, del_price)
+            text = _("Выбран филиал: %s\nРасстояние до него %s км.\nСтоимость доставки: %s сум\n\nНачнем заказ?")
+            text = text % (shop_name, dist, del_price)
         await quick_commands.update_delivery_price(id, del_price)
 
         # await message.answer(text, reply_markup=ReplyKeyboardRemove())
@@ -363,15 +365,15 @@ async def ask_drive_thru(message: types.Message):
     location = ReplyKeyboardMarkup(
         keyboard=[
             [
-                KeyboardButton(text="Отправить локацию 📍", request_location=True)
+                KeyboardButton(text=_("Отправить локацию 📍"), request_location=True)
             ],
             [
-                KeyboardButton(text="Назад 🔙")
+                KeyboardButton(text=_("Назад 🔙"))
             ]
         ],
         resize_keyboard=True
     )
-    txt = "Пожалуйста, отправьте вашу локацию вручную или с помощью кнопки для определения ближайшего до Вас филиала для самовывоза"
+    txt = _("Пожалуйста, отправьте вашу локацию вручную или с помощью кнопки для определения ближайшего до Вас филиала для самовывоза")
     await message.answer(txt, reply_markup=location)
 
     await Order.location_drive.set()
@@ -388,18 +390,18 @@ async def ask_delivery(message: types.Message):
     d_or_d = ReplyKeyboardMarkup(
         keyboard=[
             [
-                KeyboardButton(text="Доставка 🚕"),
-                KeyboardButton(text="Самовывоз 🏃")
+                KeyboardButton(text=_("Доставка 🚕")),
+                KeyboardButton(text=_("Самовывоз 🏃"))
             ],
             [
-                KeyboardButton(text="Назад 🔙")
+                KeyboardButton(text=_("Назад 🔙"))
             ]
         ],
         resize_keyboard=True,
         one_time_keyboard=True
     )
 
-    await message.answer("Вам нужна доставка или самовывоз?", reply_markup=d_or_d)
+    await message.answer(_("Вам нужна доставка или самовывоз?"), reply_markup=d_or_d)
     await Order.asklocation.set()
 
 
@@ -416,21 +418,18 @@ async def ask_again_drive(message: types.Message, state: FSMContext):
     closest_shops = await choose_shortest_kek(location_drive)
     await state.update_data(location=location_drive)  # Запись локации для доставки в бд
 
-    text = "\n\n".join([f"Ближайший филиал: {shop_name}. <a href='{url}'>Google</a>\n"
-                        f"Расстояние до него: {(distance + 2000) / 1000:.1f} км.\n"
-                        f"Желаете заказать в нем или выбрать другой филиал?"
-                        for shop_name, distance, url, shop_location in closest_shops])
+    text = "\n\n".join([_("Ближайший филиал:") + f"{shop_name}" + f".<a href='{url}'" + _(">Google</a>\nРасстояние до него:") + f"{(distance + 2000) / 1000:.1f}" + _(" км.\nЖелаете заказать в нем или выбрать другой филиал?") for shop_name, distance, url, shop_location in closest_shops])
 
     yes_no = ReplyKeyboardMarkup(
         keyboard=[
             [
-                KeyboardButton(text="Сохранить 📝"),
+                KeyboardButton(text=_("Сохранить 📝")),
             ],
             [
-                KeyboardButton(text="Выбрать другой 🏠"),
+                KeyboardButton(text=_("Выбрать другой 🏠")),
             ],
             [
-                KeyboardButton(text="Назад 🔙")
+                KeyboardButton(text=_("Назад 🔙"))
             ]
         ],
         resize_keyboard=True,
@@ -459,18 +458,18 @@ async def ask_delivery(message: types.Message):
     d_or_d = ReplyKeyboardMarkup(
         keyboard=[
             [
-                KeyboardButton(text="Доставка 🚕"),
-                KeyboardButton(text="Самовывоз 🏃")
+                KeyboardButton(text=_("Доставка 🚕")),
+                KeyboardButton(text=_("Самовывоз 🏃"))
             ],
             [
-                KeyboardButton(text="Назад 🔙")
+                KeyboardButton(text=_("Назад 🔙"))
             ]
         ],
         resize_keyboard=True,
         one_time_keyboard=True
     )
 
-    await message.answer("Вам нужна доставка или самовывоз?", reply_markup=d_or_d)
+    await message.answer(_("Вам нужна доставка или самовывоз?"), reply_markup=d_or_d)
     await Order.asklocation.set()
 
 
@@ -484,12 +483,14 @@ async def confirm_drive(message: types.Message, state: FSMContext):
     lan.install()
     _ = lan.gettext
     async with state.proxy() as data:
-        await message.answer(f'Вы выбрали филиал: {data["branch"]}')
+        txt = _("Вы выбрали филиал: %s")
+        txt = txt % data["branch"]
+        await message.answer(txt)
         id = message.from_user.id
         lang = await quick_commands.select_language(id)
         cats = await quick_commands.get_categories(lang)
         cat_lan = ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True, row_width=2).add(*[KeyboardButton(text=cat) for cat in cats])
-        await message.answer("Начнем заказ?", reply_markup=cat_lan)
+        await message.answer(_("Начнем заказ?"), reply_markup=cat_lan)
         location_delivery = data["location"]
         shop_name = data["branch"]
         await quick_commands.update_last_order_type(id, 2)
@@ -512,7 +513,7 @@ async def change_drive(message: types.Message):
     for branch in await quick_commands.select_all_branches_list():
         branches_list.append([branch])
     branches = ReplyKeyboardMarkup(branches_list, resize_keyboard=True)
-    await message.answer("Выберите филиал из списка ниже:", reply_markup=branches)
+    await message.answer(_("Выберите филиал из списка ниже:"), reply_markup=branches)
     await Order.location_drive_another.set()
 
 
@@ -534,25 +535,25 @@ async def confirm_drive_again(message: types.Message, state: FSMContext):
         yes_no = ReplyKeyboardMarkup(
             keyboard=[
                 [
-                    KeyboardButton(text="Сохранить 📝"),
+                    KeyboardButton(text=_("Сохранить 📝")),
                 ],
                 [
-                    KeyboardButton(text="Выбрать другой 🏠"),
+                    KeyboardButton(text=_("Выбрать другой 🏠")),
                 ],
                 [
-                    KeyboardButton(text="Назад 🔙")
+                    KeyboardButton(text=_("Назад 🔙"))
                 ]
             ],
             resize_keyboard=True,
             one_time_keyboard=True
         )
-        text = "Выбран филиал: %s\nЖелаете заказать в нем или выбрать другой филиал?"
+        text = _("Выбран филиал: %s\nЖелаете заказать в нем или выбрать другой филиал?")
         text = text % message.text
         await message.answer(text, reply_markup=yes_no)
 
         await Order.location_drive_another.set()
     else:
-        await message.answer("Неверный филиал. Попробуйте еще раз.")
+        await message.answer(_("Неверный филиал. Попробуйте еще раз."))
 
 @rate_limit(1, key="delivery")
 @dp.message_handler(Text(equals=["Назад 🔙", "Orqaga 🔙", "Back 🔙"]), state=Order.asklocation)
@@ -565,21 +566,21 @@ async def back_delivery(message: types.Message, state: FSMContext):
     main_menu = ReplyKeyboardMarkup(
         keyboard=[
             [
-                KeyboardButton(text="Начать заказ 🍽"),
+                KeyboardButton(text=_("Начать заказ 🍽")),
             ],
             [
-                KeyboardButton(text="Оставить отзыв 📝"),
-                KeyboardButton(text="Мои заказы 🛒")
+                KeyboardButton(text=_("Оставить отзыв 📝")),
+                KeyboardButton(text=_("Мои заказы 🛒"))
             ],
             [
-                KeyboardButton(text="Контакты 📲"),
-                KeyboardButton(text="Настройки 🛠")
+                KeyboardButton(text=_("Контакты 📲")),
+                KeyboardButton(text=_("Настройки 🛠"))
             ]
         ],
         resize_keyboard=True
     )
 
-    await message.answer(f'Приступим к оформлению?', reply_markup=main_menu)
+    await message.answer(_('Приступим к оформлению?'), reply_markup=main_menu)
     await state.finish()
 
 

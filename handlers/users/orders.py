@@ -27,7 +27,7 @@ async def orders_view(message: types.Message, state: FSMContext):
                 text = _("Заказ №%s от %s") % (order.id, time_registered)
                 keyboard.add(types.InlineKeyboardButton(text=text, callback_data=order.id))
                 count += 1
-    keyboard.add(types.InlineKeyboardButton(text="Назад 🔙", callback_data='back'))
+    keyboard.add(types.InlineKeyboardButton(text=_("Назад 🔙"), callback_data='back'))
     text_msg = _("<b>Список последних 10 заказов</b>\n\nВыберите заказ для просмотра:")
     await message.answer(text_msg, reply_markup=keyboard)
     await Orders.o_main.set()
@@ -46,20 +46,21 @@ async def order_view(query: types.CallbackQuery, state: FSMContext):
         main_menu = ReplyKeyboardMarkup(
             keyboard=[
                 [
-                    KeyboardButton(text="Начать заказ 🍽"),
+                    KeyboardButton(text=_("Начать заказ 🍽")),
                 ],
                 [
-                    KeyboardButton(text="Оставить отзыв 📝"),
-                    KeyboardButton(text="Мои заказы 🛒")
+                    KeyboardButton(text=_("Оставить отзыв 📝")),
+                    KeyboardButton(text=_("Мои заказы 🛒"))
                 ],
                 [
-                    KeyboardButton(text="Контакты 📲"),
-                    KeyboardButton(text="Настройки 🛠")
+                    KeyboardButton(text=_("Контакты 📲")),
+                    KeyboardButton(text=_("Настройки 🛠"))
                 ]
             ],
             resize_keyboard=True
         )
-        await dp.bot.send_message(id, "Главное меню 🌫", reply_markup=main_menu)
+        ma_m = _("<b>Главное меню 🌫</b>")
+        await dp.bot.send_message(id, ma_m, reply_markup=main_menu)
         await state.finish()
     else:
         await query.message.delete()
@@ -68,25 +69,25 @@ async def order_view(query: types.CallbackQuery, state: FSMContext):
             txt = await quick_commands.admin_text(int(query.data), lang)
             status = ""
             if order.status == 1:
-                status = "Ожидает подтверждения ⌛"
+                status = _("Ожидает подтверждения ⌛")
             elif order.status == 2:
-                status = "Подтвержден ✅"
+                status = _("Подтвержден ✅")
             elif order.status == 3:
-                status = "В процессе приготовления 🍳"
+                status = _("В процессе приготовления 🍳")
             elif order.status == 4:
-                status = "В процессе доставки 🚚"
+                status = _("В процессе доставки 🚚")
             elif order.status == 5:
-                status = "Доставлен ✅"
+                status = _("Доставлен ✅")
             elif order.status == 6:
-                status = "Отменен ❌"
+                status = _("Отменен ❌")
             # (1 = активный, 2 = подтвержден, 3 = приготовление, 4 = доставка, 5 = доставлен, 6 = отменен)
             txt += _("\n<i><b>Статус заказа: %s</b></i>") % status
             inline_kb1 = types.InlineKeyboardMarkup(row_width=1)
-            inline_kb1.row(types.InlineKeyboardButton("Назад 🔙", callback_data="back"))
+            inline_kb1.row(types.InlineKeyboardButton(_("Назад 🔙"), callback_data="back"))
             await dp.bot.send_message(id, txt, parse_mode="HTML", reply_markup=inline_kb1)
             await Orders.o_main_action.set()
         else:
-            await query.message.edit_text("Заказ не найден")
+            await query.message.edit_text(_("Заказ не найден"))
 
 @rate_limit(1, 'orders_action')
 @dp.callback_query_handler(state=Orders.o_main_action)
@@ -105,11 +106,12 @@ async def orders_a(query: types.CallbackQuery, state: FSMContext):
             for order in orders:
                 if count <= 10:
                     time_registered = order.created_at.strftime("%d.%m.%Y %H:%M")
-                    text = "Заказ №%s от %s" % (order.id, time_registered)
+                    text = _("Заказ №%s от %s")
+                    text = text % (order.id, time_registered)
                     keyboard.add(types.InlineKeyboardButton(text=text, callback_data=order.id))
                     count += 1
-        keyboard.add(types.InlineKeyboardButton(text="Назад 🔙", callback_data='back'))
-        text_msg = "<b>Список последних 10 заказов</b>\n\nВыберите заказ для просмотра:"
+        keyboard.add(types.InlineKeyboardButton(text=_("Назад 🔙"), callback_data='back'))
+        text_msg = _("<b>Список последних 10 заказов</b>\n\nВыберите заказ для просмотра:")
         await dp.bot.send_message(id, text_msg, reply_markup=keyboard)
         await Orders.o_main.set()
 

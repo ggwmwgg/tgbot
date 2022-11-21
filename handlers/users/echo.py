@@ -15,20 +15,20 @@ async def bot_echo(message: types.Message, state: FSMContext):
         lan = gettext.translation('tgbot', localedir='locales', languages=[lang])
         lan.install()
         _ = lan.gettext
-        text = "Неизвестная команда\nНажмите /start для перезапуска"
+        text = _("Неизвестная команда\nНажмите /start для перезапуска")
 
         main_menu = ReplyKeyboardMarkup(
             keyboard=[
                 [
-                    KeyboardButton(text="Начать заказ 🍽"),
+                    KeyboardButton(text=_("Начать заказ 🍽")),
                 ],
                 [
-                    KeyboardButton(text="Оставить отзыв 📝"),
-                    KeyboardButton(text="Мои заказы 🛒")
+                    KeyboardButton(text=_("Оставить отзыв 📝")),
+                    KeyboardButton(text=_("Мои заказы 🛒"))
                 ],
                 [
-                    KeyboardButton(text="Контакты 📲"),
-                    KeyboardButton(text="Настройки 🛠")
+                    KeyboardButton(text=_("Контакты 📲")),
+                    KeyboardButton(text=_("Настройки 🛠"))
                 ]
             ],
             resize_keyboard=True

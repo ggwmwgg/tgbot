@@ -16,10 +16,10 @@ async def bot_help(message: types.Message):
         lan = gettext.translation('tgbot', localedir='locales', languages=[lang])
         lan.install()
         _ = lan.gettext
-        list_of_commands = 'Список команд: '
-        comm_one = '/start - Запуск бота'
-        comm_two = '/order - Начать заказ'
-        comm_three = '/help - Помощь'
+        list_of_commands = _('Список команд: ')
+        comm_one = _('/start - Запуск бота')
+        comm_two = _('/order - Начать заказ')
+        comm_three = _('/help - Помощь')
         text = [list_of_commands, comm_one, comm_two, comm_three]
         await message.answer('\n'.join(text))
     else:
